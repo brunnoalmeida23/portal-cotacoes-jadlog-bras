@@ -124,6 +124,33 @@ async def consulta():
             .modal-header .btn-close {
                 filter: brightness(0) invert(1);
             }
+            .campo-busca {
+                border-left: 4px solid #E31E24;
+                padding-left: 12px;
+            }
+            .campo-busca label {
+                font-weight: 600;
+                font-size: 0.9rem;
+            }
+            .detalhe-cotacao .row {
+                margin-bottom: 6px;
+            }
+            .detalhe-cotacao .label {
+                font-weight: 600;
+                color: #6c757d;
+                font-size: 0.8rem;
+            }
+            .detalhe-cotacao .value {
+                font-weight: 600;
+                font-size: 1.1rem;
+            }
+            .detalhe-cotacao .value-total {
+                color: #E31E24;
+                font-size: 1.5rem;
+            }
+            .detalhe-cotacao .value-frete {
+                color: #28a745;
+            }
         </style>
     </head>
     <body>
@@ -178,6 +205,36 @@ async def consulta():
             </div>
         </div>
 
+        <!-- Modal de Detalhes da Cotação -->
+        <div class="modal fade" id="detalheModal" tabindex="-1">
+            <div class="modal-dialog modal-md">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="bi bi-file-text me-2"></i>
+                            Detalhes da Cotação
+                            <span id="modalNumero" class="badge bg-success ms-2"></span>
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body detalhe-cotacao" id="modalBody">
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-danger" role="status">
+                                <span class="visually-hidden">Carregando...</span>
+                            </div>
+                            <p class="mt-2 text-muted">Carregando detalhes...</p>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                        <button class="btn btn-outline-success" id="modalBaixarPDF">
+                            <i class="bi bi-file-pdf me-1"></i> Baixar PDF
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="install-banner" id="installBanner">
             <div style="display:flex;align-items:center;gap:12px;">
                 <div style="width:48px;height:48px;border-radius:12px;background:#E31E24;display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:24px;">J</div>
@@ -201,21 +258,61 @@ async def consulta():
                             Consultar Cotações
                         </h4>
                         
-                        <div class="mb-3">
-                            <label class="fw-bold">CPF/CNPJ do Cliente</label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="bi bi-credit-card"></i></span>
-                                <input type="text" class="form-control" id="buscarDocumento" placeholder="Digite o CPF ou CNPJ" maxlength="18">
-                                <button class="btn btn-jadlog" onclick="buscarCotacoes()">
-                                    <i class="bi bi-search me-2"></i>Buscar
-                                </button>
-                                <button class="btn btn-outline-secondary" onclick="limparBusca()">
-                                    <i class="bi bi-x-lg"></i>
-                                </button>
+                        <!-- ===== CAMPOS DE BUSCA ===== -->
+                        <div class="row g-3">
+                            <!-- Busca por Número da Cotação -->
+                            <div class="col-md-6 campo-busca">
+                                <label class="fw-bold">Número da Cotação</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-hash"></i></span>
+                                    <input type="text" class="form-control" id="buscarNumero" placeholder="Ex: COT-2026-0001">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="limparNumero()">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                </div>
+                                <small class="text-muted">Busca EXATA por número da cotação</small>
                             </div>
-                            <small class="text-muted">Digite o CPF ou CNPJ para ver todas as cotações do cliente</small>
+
+                            <!-- Busca por CPF/CNPJ -->
+                            <div class="col-md-6 campo-busca">
+                                <label class="fw-bold">CPF/CNPJ do Cliente</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-credit-card"></i></span>
+                                    <input type="text" class="form-control" id="buscarDocumento" placeholder="Digite o CPF ou CNPJ" maxlength="18">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="limparDocumento()">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                </div>
+                                <small class="text-muted">Busca TODAS as cotações do cliente</small>
+                            </div>
                         </div>
 
+                        <!-- Busca por Nome do Cliente -->
+                        <div class="row mt-3">
+                            <div class="col-12 campo-busca">
+                                <label class="fw-bold">Nome do Cliente</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-person"></i></span>
+                                    <input type="text" class="form-control" id="buscarNome" placeholder="Digite o nome do cliente">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="limparNome()">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                </div>
+                                <small class="text-muted">Busca TODAS as cotações do cliente por nome (parcial)</small>
+                            </div>
+                        </div>
+
+                        <!-- Botões de Ação -->
+                        <div class="d-flex gap-3 mt-4">
+                            <button class="btn btn-jadlog" onclick="buscarCotacoes()">
+                                <i class="bi bi-search me-2"></i>Buscar
+                            </button>
+                            <button class="btn btn-outline-jadlog" onclick="limparBusca()">
+                                <i class="bi bi-arrow-counterclockwise me-2"></i>Limpar
+                            </button>
+                        </div>
+
+                        <!-- ===== ÁREA DE RESULTADOS ===== -->
                         <div id="resultadoArea" style="display:none;">
                             <div id="clienteInfo" class="cliente-info" style="display:none;">
                                 <div class="d-flex justify-content-between align-items-center">
@@ -231,11 +328,12 @@ async def consulta():
                             <div id="nenhumaCotacao" style="display:none;">
                                 <div class="text-center text-muted py-4">
                                     <i class="bi bi-inbox fs-1 d-block mb-3"></i>
-                                    <p>Nenhuma cotação encontrada para este cliente</p>
+                                    <p>Nenhuma cotação encontrada</p>
                                 </div>
                             </div>
                         </div>
 
+                        <!-- Loading -->
                         <div id="loading" style="display:none;" class="text-center py-4">
                             <div class="spinner-border text-danger" role="status">
                                 <span class="visually-hidden">Carregando...</span>
@@ -263,7 +361,6 @@ async def consulta():
                     const data = JSON.parse(loginData);
                     const agora = new Date().getTime();
                     if (agora < data.expiracao) {
-                        // Sessão ainda válida
                         document.getElementById('loginButton').style.display = 'none';
                         document.getElementById('logoutButton').style.display = 'block';
                         return true;
@@ -288,12 +385,9 @@ async def consulta():
             const senha = document.getElementById('senhaLogin').value;
             
             if (senha === SENHA_FUNCIONARIO) {
-                // Salvar sessão no localStorage com expiração
                 const agora = new Date().getTime();
                 const expiracao = agora + (VALIDADE_LOGIN_HORAS * 60 * 60 * 1000);
-                localStorage.setItem('loginData', JSON.stringify({
-                    expiracao: expiracao
-                }));
+                localStorage.setItem('loginData', JSON.stringify({ expiracao: expiracao }));
                 
                 document.getElementById('loginButton').style.display = 'none';
                 document.getElementById('logoutButton').style.display = 'block';
@@ -311,29 +405,24 @@ async def consulta():
 
         function logout() {
             localStorage.removeItem('loginData');
-            
             document.getElementById('loginButton').style.display = 'block';
             document.getElementById('logoutButton').style.display = 'none';
-            
             alert('🔒 Você saiu do modo restrito.');
         }
 
         document.getElementById('senhaLogin').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                validarLogin();
-            }
+            if (e.key === 'Enter') validarLogin();
         });
 
         document.getElementById('loginModal').addEventListener('hidden.bs.modal', function() {
             document.getElementById('senhaLogin').value = '';
         });
 
-        // Verificar sessão ao carregar a página
         window.addEventListener('load', function() {
             verificarSessao();
         });
 
-        // ===== MÁSCARA CPF/CNPJ =====
+        // ===== MÁSCARAS =====
         document.getElementById('buscarDocumento').addEventListener('input', function(e) {
             let value = this.value.replace(/\\D/g, '');
             if (value.length <= 11) {
@@ -349,48 +438,86 @@ async def consulta():
             this.value = value;
         });
 
-        document.getElementById('buscarDocumento').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') buscarCotacoes();
-        });
+        // ===== FUNÇÕES DE LIMPEZA =====
+        function limparNumero() {
+            document.getElementById('buscarNumero').value = '';
+        }
+
+        function limparDocumento() {
+            document.getElementById('buscarDocumento').value = '';
+        }
+
+        function limparNome() {
+            document.getElementById('buscarNome').value = '';
+        }
 
         // ===== BUSCAR COTAÇÕES =====
         async function buscarCotacoes() {
+            const numero = document.getElementById('buscarNumero').value.trim();
             const documento = document.getElementById('buscarDocumento').value.trim();
-            if (!documento) {
-                alert('Digite o CPF ou CNPJ do cliente');
+            const nome = document.getElementById('buscarNome').value.trim();
+            
+            if (!numero && !documento && !nome) {
+                alert('Digite o número da cotação, CPF/CNPJ ou nome do cliente');
                 return;
             }
+            
             document.getElementById('resultadoArea').style.display = 'none';
             document.getElementById('listaCotacoes').innerHTML = '';
             document.getElementById('nenhumaCotacao').style.display = 'none';
             document.getElementById('loading').style.display = 'block';
-            const cpfLimpo = documento.replace(/\\D/g, '');
-            const url = `/api/buscar-cotacao?documento=${encodeURIComponent(cpfLimpo)}`;
+            
+            let url = '/api/buscar-cotacao?';
+            const params = [];
+            
+            if (numero) {
+                params.push(`numero=${encodeURIComponent(numero)}`);
+            }
+            if (documento) {
+                const cpfLimpo = documento.replace(/\\D/g, '');
+                params.push(`documento=${encodeURIComponent(cpfLimpo)}`);
+            }
+            if (nome) {
+                params.push(`nome=${encodeURIComponent(nome)}`);
+            }
+            
+            url += params.join('&');
+            
             try {
                 const response = await fetch(url);
                 const result = await response.json();
                 document.getElementById('loading').style.display = 'none';
+                
                 if (result.success && result.dados) {
                     const dados = Array.isArray(result.dados) ? result.dados : [result.dados];
+                    
                     if (dados.length === 0 || (dados.length === 1 && !dados[0].numero_cotacao)) {
                         document.getElementById('resultadoArea').style.display = 'block';
                         document.getElementById('nenhumaCotacao').style.display = 'block';
                         document.getElementById('clienteInfo').style.display = 'none';
                         return;
                     }
+                    
+                    // Mostra informações do cliente (se tiver)
                     const primeiro = dados[0];
-                    document.getElementById('clienteNome').textContent = primeiro.cliente_nome || 'NÃO INFORMADO';
-                    document.getElementById('clienteDoc').textContent = primeiro.cliente_documento || '';
-                    document.getElementById('totalCotacoes').textContent = `Total de cotações: ${dados.length}`;
-                    document.getElementById('clienteInfo').style.display = 'block';
+                    if (primeiro.cliente_nome) {
+                        document.getElementById('clienteNome').textContent = primeiro.cliente_nome || 'NÃO INFORMADO';
+                        document.getElementById('clienteDoc').textContent = primeiro.cliente_documento || '';
+                        document.getElementById('totalCotacoes').textContent = `Total de cotações: ${dados.length}`;
+                        document.getElementById('clienteInfo').style.display = 'block';
+                    } else {
+                        document.getElementById('clienteInfo').style.display = 'none';
+                    }
                     
                     let html = '';
                     dados.forEach((d) => {
                         const data = d.data_criacao ? new Date(d.data_criacao).toLocaleString('pt-BR') : 'Data não informada';
                         const destino = (d.cidade || '') + '/' + (d.uf || '');
                         const valor = d.total || d.frete || 0;
+                        const clienteNome = d.cliente_nome || 'Cliente não informado';
+                        
                         html += `
-                            <div class="resultado-item" onclick="verDetalhe('${d.numero_cotacao}')">
+                            <div class="resultado-item" onclick="abrirDetalhe('${d.numero_cotacao}')">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
                                         <span class="numero">${d.numero_cotacao || 'N/A'}</span>
@@ -401,7 +528,10 @@ async def consulta():
                                     <span class="valor">R$ ${valor.toFixed(2)}</span>
                                 </div>
                                 <div class="info mt-1">
-                                    <i class="bi bi-geo-alt me-1"></i>${destino || 'Destino não informado'}
+                                    <i class="bi bi-person me-1"></i>${clienteNome}
+                                    <span class="ms-3">
+                                        <i class="bi bi-geo-alt me-1"></i>${destino || 'Destino não informado'}
+                                    </span>
                                     <span class="ms-3">
                                         <i class="bi bi-weight-scale me-1"></i>${d.peso || 0} kg
                                     </span>
@@ -409,6 +539,7 @@ async def consulta():
                             </div>
                         `;
                     });
+                    
                     document.getElementById('listaCotacoes').innerHTML = html;
                     document.getElementById('resultadoArea').style.display = 'block';
                     document.getElementById('nenhumaCotacao').style.display = 'none';
@@ -425,7 +556,9 @@ async def consulta():
         }
 
         function limparBusca() {
+            document.getElementById('buscarNumero').value = '';
             document.getElementById('buscarDocumento').value = '';
+            document.getElementById('buscarNome').value = '';
             document.getElementById('resultadoArea').style.display = 'none';
             document.getElementById('listaCotacoes').innerHTML = '';
             document.getElementById('nenhumaCotacao').style.display = 'none';
@@ -433,20 +566,157 @@ async def consulta():
             document.getElementById('loading').style.display = 'none';
         }
 
-        function verDetalhe(numeroCotacao) {
+        // ===== ABRIR DETALHE DA COTAÇÃO (MODAL) =====
+        let cotacaoAtual = null;
+
+        async function abrirDetalhe(numeroCotacao) {
             if (!numeroCotacao) return;
-            window.location.href = `/consulta?numero=${numeroCotacao}`;
+            
+            // Abrir o modal
+            var modal = new bootstrap.Modal(document.getElementById('detalheModal'));
+            modal.show();
+            
+            // Mostrar loading
+            document.getElementById('modalBody').innerHTML = `
+                <div class="text-center py-4">
+                    <div class="spinner-border text-danger" role="status">
+                        <span class="visually-hidden">Carregando...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Carregando detalhes da cotação...</p>
+                </div>
+            `;
+            document.getElementById('modalNumero').textContent = numeroCotacao;
+            document.getElementById('modalBaixarPDF').onclick = function() {
+                baixarPDF(numeroCotacao);
+            };
+            
+            try {
+                const response = await fetch(`/api/buscar-cotacao?numero=${encodeURIComponent(numeroCotacao)}`);
+                const result = await response.json();
+                
+                if (result.success && result.dados) {
+                    const d = result.dados;
+                    cotacaoAtual = d;
+                    
+                    const data = d.data_criacao ? new Date(d.data_criacao).toLocaleString('pt-BR') : 'Data não informada';
+                    const destino = (d.cidade || '') + '/' + (d.uf || '');
+                    const valorBase = d.frete || 0;
+                    const seguro = d.seguro || 0;
+                    const total = d.total || 0;
+                    const clienteNome = d.cliente_nome || 'Cliente não informado';
+                    const clienteDoc = d.cliente_documento || 'Não informado';
+                    const peso = d.peso || 0;
+                    const modalidade = d.modalidade || 'PACKAGE';
+                    const prazo = d.prazo || '1';
+                    
+                    document.getElementById('modalBody').innerHTML = `
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="label">Número</div>
+                                <div class="value">${d.numero_cotacao}</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="label">Data</div>
+                                <div class="value">${data}</div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="label">Cliente</div>
+                                <div class="value">${clienteNome}</div>
+                                <small class="text-muted">${clienteDoc}</small>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="label">Destino</div>
+                                <div class="value">${destino}</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="label">Tipo</div>
+                                <div class="value">${d.tipo_tarifa || 'N/A'}</div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="label">Peso</div>
+                                <div class="value">${peso} kg</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="label">Prazo</div>
+                                <div class="value">${prazo} dia(s)</div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="label">Modalidade</div>
+                                <div class="value">${modalidade}</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="label">CEP Destino</div>
+                                <div class="value">${d.cep_destino || 'N/A'}</div>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row">
+                            <div class="col-4">
+                                <div class="label">Frete</div>
+                                <div class="value value-frete">R$ ${valorBase.toFixed(2)}</div>
+                            </div>
+                            <div class="col-4">
+                                <div class="label">Seguro</div>
+                                <div class="value">R$ ${seguro.toFixed(2)}</div>
+                            </div>
+                            <div class="col-4">
+                                <div class="label">Total</div>
+                                <div class="value value-total">R$ ${total.toFixed(2)}</div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('modalBody').innerHTML = `
+                        <div class="text-center py-4 text-danger">
+                            <i class="bi bi-exclamation-triangle fs-1 d-block mb-3"></i>
+                            <p>Erro ao carregar os detalhes da cotação.</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('modalBody').innerHTML = `
+                    <div class="text-center py-4 text-danger">
+                        <i class="bi bi-exclamation-triangle fs-1 d-block mb-3"></i>
+                        <p>Erro ao carregar os detalhes da cotação.</p>
+                        <small>${error.message}</small>
+                    </div>
+                `;
+            }
         }
 
+        function baixarPDF(numeroCotacao) {
+            if (!numeroCotacao) return;
+            const url = `/api/imprimir-recibo?numero_cotacao=${encodeURIComponent(numeroCotacao)}&_=${Date.now()}`;
+            window.open(url, '_blank');
+        }
+
+        // ===== PERMITIR BUSCA COM ENTER =====
+        document.getElementById('buscarNumero').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') buscarCotacoes();
+        });
+        document.getElementById('buscarDocumento').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') buscarCotacoes();
+        });
+        document.getElementById('buscarNome').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') buscarCotacoes();
+        });
+
+        // ===== CARREGAR PARÂMETRO DA URL =====
         window.addEventListener('load', function() {
             const urlParams = new URLSearchParams(window.location.search);
             const numero = urlParams.get('numero');
             if (numero) {
-                const campoNumero = document.getElementById('buscarNumero');
-                if (campoNumero) {
-                    campoNumero.value = numero;
-                    buscarCotacao();
-                }
+                document.getElementById('buscarNumero').value = numero;
+                buscarCotacoes();
             }
         });
 
