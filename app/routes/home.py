@@ -169,105 +169,139 @@ async def home():
 
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
         <script>
-            let funcionarioLogado = false;
-            const SENHA_FUNCIONARIO = 'jadlog2026';
+        // ===== SISTEMA DE LOGIN COM localStorage =====
+        const SENHA_FUNCIONARIO = 'jadlog2026';
+        const VALIDADE_LOGIN_HORAS = 8;
 
-            function abrirLogin() {
-                var modal = new bootstrap.Modal(document.getElementById('loginModal'));
-                modal.show();
+        function verificarSessao() {
+            const loginData = localStorage.getItem('loginData');
+            if (loginData) {
+                try {
+                    const data = JSON.parse(loginData);
+                    const agora = new Date().getTime();
+                    if (agora < data.expiracao) {
+                        // Sessão ainda válida
+                        document.getElementById('loginButton').style.display = 'none';
+                        document.getElementById('logoutButton').style.display = 'block';
+                        return true;
+                    } else {
+                        // Sessão expirada
+                        localStorage.removeItem('loginData');
+                    }
+                } catch (e) {
+                    localStorage.removeItem('loginData');
+                }
+            }
+            return false;
+        }
+
+        function abrirLogin() {
+            var modal = new bootstrap.Modal(document.getElementById('loginModal'));
+            modal.show();
+            document.getElementById('senhaLogin').value = '';
+            document.getElementById('senhaLogin').focus();
+        }
+
+        function validarLogin() {
+            const senha = document.getElementById('senhaLogin').value;
+            
+            if (senha === SENHA_FUNCIONARIO) {
+                // Salvar sessão no localStorage com expiração
+                const agora = new Date().getTime();
+                const expiracao = agora + (VALIDADE_LOGIN_HORAS * 60 * 60 * 1000);
+                localStorage.setItem('loginData', JSON.stringify({
+                    expiracao: expiracao
+                }));
+                
+                document.getElementById('loginButton').style.display = 'none';
+                document.getElementById('logoutButton').style.display = 'block';
+                
+                var modal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
+                modal.hide();
+                
+                alert('✅ Login realizado com sucesso! Você permanecerá logado por 8 horas.');
+            } else {
+                alert('❌ Senha incorreta! Tente novamente.');
                 document.getElementById('senhaLogin').value = '';
                 document.getElementById('senhaLogin').focus();
             }
+        }
 
-            function validarLogin() {
-                const senha = document.getElementById('senhaLogin').value;
-                
-                if (senha === SENHA_FUNCIONARIO) {
-                    funcionarioLogado = true;
-                    
-                    document.getElementById('loginButton').style.display = 'none';
-                    document.getElementById('logoutButton').style.display = 'block';
-                    
-                    var modal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
-                    modal.hide();
-                    
-                    alert('✅ Login realizado com sucesso!');
+        function logout() {
+            localStorage.removeItem('loginData');
+            
+            document.getElementById('loginButton').style.display = 'block';
+            document.getElementById('logoutButton').style.display = 'none';
+            
+            alert('🔒 Você saiu do modo restrito.');
+        }
+
+        document.getElementById('senhaLogin').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                validarLogin();
+            }
+        });
+
+        document.getElementById('loginModal').addEventListener('hidden.bs.modal', function() {
+            document.getElementById('senhaLogin').value = '';
+        });
+
+        // Verificar sessão ao carregar a página
+        window.addEventListener('load', function() {
+            verificarSessao();
+        });
+
+        // ===== PWA =====
+        let deferredPrompt;
+        const installBanner = document.getElementById('installBanner');
+        const installBtn = document.getElementById('installBtn');
+        const closeBannerBtn = document.getElementById('closeBannerBtn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBanner.style.display = 'flex';
+            console.log('📱 PWA pronto para instalação!');
+        });
+
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const result = await deferredPrompt.userChoice;
+                if (result.outcome === 'accepted') {
+                    console.log('✅ App instalado com sucesso!');
+                    installBanner.style.display = 'none';
                 } else {
-                    alert('❌ Senha incorreta! Tente novamente.');
-                    document.getElementById('senhaLogin').value = '';
-                    document.getElementById('senhaLogin').focus();
+                    console.log('❌ Usuário recusou a instalação');
                 }
+                deferredPrompt = null;
             }
+        });
 
-            function logout() {
-                funcionarioLogado = false;
-                
-                document.getElementById('loginButton').style.display = 'block';
-                document.getElementById('logoutButton').style.display = 'none';
-                
-                alert('🔒 Você saiu do modo funcionário.');
-            }
+        closeBannerBtn.addEventListener('click', () => {
+            installBanner.style.display = 'none';
+        });
 
-            document.getElementById('senhaLogin').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    validarLogin();
-                }
+        window.addEventListener('appinstalled', () => {
+            installBanner.style.display = 'none';
+            console.log('🎉 App instalado!');
+        });
+
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+            installBanner.style.display = 'none';
+        }
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(function(registration) {
+                        console.log('ServiceWorker registrado com sucesso:', registration.scope);
+                    })
+                    .catch(function(error) {
+                        console.log('Falha ao registrar ServiceWorker:', error);
+                    });
             });
-
-            document.getElementById('loginModal').addEventListener('hidden.bs.modal', function() {
-                document.getElementById('senhaLogin').value = '';
-            });
-
-            let deferredPrompt;
-            const installBanner = document.getElementById('installBanner');
-            const installBtn = document.getElementById('installBtn');
-            const closeBannerBtn = document.getElementById('closeBannerBtn');
-
-            window.addEventListener('beforeinstallprompt', (e) => {
-                e.preventDefault();
-                deferredPrompt = e;
-                installBanner.style.display = 'flex';
-                console.log('📱 PWA pronto para instalação!');
-            });
-
-            installBtn.addEventListener('click', async () => {
-                if (deferredPrompt) {
-                    deferredPrompt.prompt();
-                    const result = await deferredPrompt.userChoice;
-                    if (result.outcome === 'accepted') {
-                        console.log('✅ App instalado com sucesso!');
-                        installBanner.style.display = 'none';
-                    } else {
-                        console.log('❌ Usuário recusou a instalação');
-                    }
-                    deferredPrompt = null;
-                }
-            });
-
-            closeBannerBtn.addEventListener('click', () => {
-                installBanner.style.display = 'none';
-            });
-
-            window.addEventListener('appinstalled', () => {
-                installBanner.style.display = 'none';
-                console.log('🎉 App instalado!');
-            });
-
-            if (window.matchMedia('(display-mode: standalone)').matches) {
-                installBanner.style.display = 'none';
-            }
-
-            if ('serviceWorker' in navigator) {
-                window.addEventListener('load', function() {
-                    navigator.serviceWorker.register('/sw.js')
-                        .then(function(registration) {
-                            console.log('ServiceWorker registrado com sucesso:', registration.scope);
-                        })
-                        .catch(function(error) {
-                            console.log('Falha ao registrar ServiceWorker:', error);
-                        });
-                });
-            }
+        }
         </script>
     </body>
     </html>

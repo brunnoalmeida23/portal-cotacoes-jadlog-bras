@@ -171,7 +171,7 @@ async def simulador():
                     <div class="modal-body">
                         <p class="text-muted">Digite a senha para imprimir o recibo:</p>
                         <input type="password" class="form-control form-control-lg" id="senhaImpressao" placeholder="Senha">
-                        <small class="text-muted d-block mt-2">Senha padrão: <strong>jadlog2026</strong></small>
+                        <small class="text-muted d-block mt-2">Digite a senha de acesso</small>
                     </div>
                     <div class="modal-footer">
                         <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -414,15 +414,15 @@ async def simulador():
                                 </div>
                             </div>
                             <div class="promocao-bras">
-    <div class="titulo">
-        <i class="bi bi-star-fill text-warning me-1"></i>
-        VALORES EXCLUSIVOS DA UNIDADE DA AV. VAUTIER, 455 (BRÁS)
-    </div>
-    <div class="validade">
-        <i class="bi bi-calendar me-1"></i>
-        Válidos até Dezembro de 2026
-    </div>
-</div>
+                                <div class="titulo">
+                                    <i class="bi bi-star-fill text-warning me-1"></i>
+                                    VALORES EXCLUSIVOS DA UNIDADE DA AV. VAUTIER, 455 (BRÁS)
+                                </div>
+                                <div class="validade">
+                                    <i class="bi bi-calendar me-1"></i>
+                                    Válidos até Dezembro de 2026
+                                </div>
+                            </div>
                         </div>
                         
                         <!-- BOTÕES -->
@@ -474,7 +474,91 @@ async def simulador():
 
         <script>
         const ts = Date.now();
-        
+
+        // ===== SISTEMA DE LOGIN COM localStorage =====
+        const SENHA_FUNCIONARIO = 'jadlog2026';
+        const VALIDADE_LOGIN_HORAS = 8;
+
+        function verificarSessao() {
+            const loginData = localStorage.getItem('loginData');
+            if (loginData) {
+                try {
+                    const data = JSON.parse(loginData);
+                    const agora = new Date().getTime();
+                    if (agora < data.expiracao) {
+                        // Sessão ainda válida
+                        document.getElementById('loginButton').style.display = 'none';
+                        document.getElementById('logoutButton').style.display = 'block';
+                        document.getElementById('btnImprimirRecibo').style.display = 'block';
+                        return true;
+                    } else {
+                        localStorage.removeItem('loginData');
+                    }
+                } catch (e) {
+                    localStorage.removeItem('loginData');
+                }
+            }
+            return false;
+        }
+
+        function abrirLogin() {
+            var modal = new bootstrap.Modal(document.getElementById('loginModal'));
+            modal.show();
+            document.getElementById('senhaLogin').value = '';
+            document.getElementById('senhaLogin').focus();
+        }
+
+        function validarLogin() {
+            const senha = document.getElementById('senhaLogin').value;
+            
+            if (senha === SENHA_FUNCIONARIO) {
+                // Salvar sessão no localStorage com expiração
+                const agora = new Date().getTime();
+                const expiracao = agora + (VALIDADE_LOGIN_HORAS * 60 * 60 * 1000);
+                localStorage.setItem('loginData', JSON.stringify({
+                    expiracao: expiracao
+                }));
+                
+                document.getElementById('loginButton').style.display = 'none';
+                document.getElementById('logoutButton').style.display = 'block';
+                document.getElementById('btnImprimirRecibo').style.display = 'block';
+                
+                var modal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
+                modal.hide();
+                
+                alert('✅ Login realizado com sucesso! Você permanecerá logado por 8 horas.');
+            } else {
+                alert('❌ Senha incorreta! Tente novamente.');
+                document.getElementById('senhaLogin').value = '';
+                document.getElementById('senhaLogin').focus();
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('loginData');
+            
+            document.getElementById('loginButton').style.display = 'block';
+            document.getElementById('logoutButton').style.display = 'none';
+            document.getElementById('btnImprimirRecibo').style.display = 'none';
+            
+            alert('🔒 Você saiu do modo restrito.');
+        }
+
+        document.getElementById('senhaLogin').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                validarLogin();
+            }
+        });
+
+        document.getElementById('loginModal').addEventListener('hidden.bs.modal', function() {
+            document.getElementById('senhaLogin').value = '';
+        });
+
+        // Verificar sessão ao carregar a página
+        window.addEventListener('load', function() {
+            verificarSessao();
+        });
+
         // ===== MÁSCARAS =====
         document.getElementById('clienteCpf').addEventListener('input', function(e) {
             let value = this.value.replace(/\\D/g, '');
@@ -751,62 +835,7 @@ async def simulador():
             }
         }
 
-        // ===== SISTEMA DE LOGIN =====
-        let funcionarioLogado = false;
-        const SENHA_FUNCIONARIO = 'jadlog2026';
-
-        function abrirLogin() {
-            var modal = new bootstrap.Modal(document.getElementById('loginModal'));
-            modal.show();
-            document.getElementById('senhaLogin').value = '';
-            document.getElementById('senhaLogin').focus();
-        }
-
-        function validarLogin() {
-            const senha = document.getElementById('senhaLogin').value;
-            
-            if (senha === SENHA_FUNCIONARIO) {
-                funcionarioLogado = true;
-                
-                document.getElementById('loginButton').style.display = 'none';
-                document.getElementById('logoutButton').style.display = 'block';
-                
-                // Mostra o botão de impressão
-                document.getElementById('btnImprimirRecibo').style.display = 'block';
-                
-                var modal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
-                modal.hide();
-                
-                alert('✅ Login realizado com sucesso! Você pode imprimir recibos agora.');
-            } else {
-                alert('❌ Senha incorreta! Tente novamente.');
-                document.getElementById('senhaLogin').value = '';
-                document.getElementById('senhaLogin').focus();
-            }
-        }
-
-        function logout() {
-            funcionarioLogado = false;
-            
-            document.getElementById('loginButton').style.display = 'block';
-            document.getElementById('logoutButton').style.display = 'none';
-            
-            document.getElementById('btnImprimirRecibo').style.display = 'none';
-            
-            alert('🔒 Você saiu do modo funcionário.');
-        }
-
-        document.getElementById('senhaLogin').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                validarLogin();
-            }
-        });
-
-        document.getElementById('loginModal').addEventListener('hidden.bs.modal', function() {
-            document.getElementById('senhaLogin').value = '';
-        });
-
-        // ===== SISTEMA DE SENHA HÍBRIDO (para impressão) =====
+        // ===== SISTEMA DE SENHA PARA IMPRESSÃO =====
         let senhaValidada = false;
         let validadeSenha = null;
         let numeroCotacaoAtual = '';
@@ -840,8 +869,24 @@ async def simulador():
                 return;
             }
             
-            if (!funcionarioLogado) {
-                alert('🔒 Apenas funcionários logados podem imprimir recibos. Faça login no botão "Funcionário".');
+            // Verifica se o usuário está logado via localStorage
+            const loginData = localStorage.getItem('loginData');
+            if (!loginData) {
+                alert('🔒 Apenas funcionários logados podem imprimir recibos. Faça login no botão "Login".');
+                return;
+            }
+            
+            try {
+                const data = JSON.parse(loginData);
+                const agora = new Date().getTime();
+                if (agora >= data.expiracao) {
+                    localStorage.removeItem('loginData');
+                    alert('🔒 Sua sessão expirou. Faça login novamente.');
+                    return;
+                }
+            } catch (e) {
+                localStorage.removeItem('loginData');
+                alert('🔒 Sessão inválida. Faça login novamente.');
                 return;
             }
             
@@ -870,11 +915,18 @@ async def simulador():
 
         // ===== DUPLO CLIQUE NO NÚMERO DA COTAÇÃO =====
         document.getElementById('numeroCotacao').addEventListener('dblclick', function() {
-            if (funcionarioLogado) {
-                alert('🔓 Você já está logado como funcionário. O botão "Imprimir Recibo" já está visível.');
-            } else {
-                alert('🔒 Área restrita. Faça login no botão "Funcionário" no canto superior direito.');
+            const loginData = localStorage.getItem('loginData');
+            if (loginData) {
+                try {
+                    const data = JSON.parse(loginData);
+                    const agora = new Date().getTime();
+                    if (agora < data.expiracao) {
+                        alert('🔓 Você já está logado. O botão "Imprimir Recibo" já está visível.');
+                        return;
+                    }
+                } catch (e) {}
             }
+            alert('🔒 Área restrita. Faça login no botão "Login" no canto superior direito.');
         });
 
         // ===== PWA =====

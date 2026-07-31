@@ -252,9 +252,30 @@ async def consulta():
         </footer>
 
         <script>
-        // ===== SISTEMA DE LOGIN =====
-        let funcionarioLogado = false;
+        // ===== SISTEMA DE LOGIN COM localStorage =====
         const SENHA_FUNCIONARIO = 'jadlog2026';
+        const VALIDADE_LOGIN_HORAS = 8;
+
+        function verificarSessao() {
+            const loginData = localStorage.getItem('loginData');
+            if (loginData) {
+                try {
+                    const data = JSON.parse(loginData);
+                    const agora = new Date().getTime();
+                    if (agora < data.expiracao) {
+                        // Sessão ainda válida
+                        document.getElementById('loginButton').style.display = 'none';
+                        document.getElementById('logoutButton').style.display = 'block';
+                        return true;
+                    } else {
+                        localStorage.removeItem('loginData');
+                    }
+                } catch (e) {
+                    localStorage.removeItem('loginData');
+                }
+            }
+            return false;
+        }
 
         function abrirLogin() {
             var modal = new bootstrap.Modal(document.getElementById('loginModal'));
@@ -267,7 +288,12 @@ async def consulta():
             const senha = document.getElementById('senhaLogin').value;
             
             if (senha === SENHA_FUNCIONARIO) {
-                funcionarioLogado = true;
+                // Salvar sessão no localStorage com expiração
+                const agora = new Date().getTime();
+                const expiracao = agora + (VALIDADE_LOGIN_HORAS * 60 * 60 * 1000);
+                localStorage.setItem('loginData', JSON.stringify({
+                    expiracao: expiracao
+                }));
                 
                 document.getElementById('loginButton').style.display = 'none';
                 document.getElementById('logoutButton').style.display = 'block';
@@ -275,7 +301,7 @@ async def consulta():
                 var modal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
                 modal.hide();
                 
-                alert('✅ Login realizado com sucesso!');
+                alert('✅ Login realizado com sucesso! Você permanecerá logado por 8 horas.');
             } else {
                 alert('❌ Senha incorreta! Tente novamente.');
                 document.getElementById('senhaLogin').value = '';
@@ -284,12 +310,12 @@ async def consulta():
         }
 
         function logout() {
-            funcionarioLogado = false;
+            localStorage.removeItem('loginData');
             
             document.getElementById('loginButton').style.display = 'block';
             document.getElementById('logoutButton').style.display = 'none';
             
-            alert('🔒 Você saiu do modo funcionário.');
+            alert('🔒 Você saiu do modo restrito.');
         }
 
         document.getElementById('senhaLogin').addEventListener('keypress', function(e) {
@@ -300,6 +326,11 @@ async def consulta():
 
         document.getElementById('loginModal').addEventListener('hidden.bs.modal', function() {
             document.getElementById('senhaLogin').value = '';
+        });
+
+        // Verificar sessão ao carregar a página
+        window.addEventListener('load', function() {
+            verificarSessao();
         });
 
         // ===== MÁSCARA CPF/CNPJ =====
