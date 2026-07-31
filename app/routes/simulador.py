@@ -148,7 +148,7 @@ async def simulador():
                     <div class="modal-body">
                         <p class="text-muted">Digite a senha para acessar as funções restritas:</p>
                         <input type="password" class="form-control form-control-lg" id="senhaLogin" placeholder="Senha">
-                        <small class="text-muted d-block mt-2">Senha padrão: <strong>jadlog2026</strong></small>
+                        <small class="text-muted d-block mt-2">Digite a senha de acesso</small>
                     </div>
                     <div class="modal-footer">
                         <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
