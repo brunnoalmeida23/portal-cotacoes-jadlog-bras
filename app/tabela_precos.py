@@ -59,7 +59,7 @@ class TabelaPrecos:
     
     def calcular_frete(self, uf, tipo_tarifa, peso):
         """
-        Calcula o frete baseado na planilha
+        Calcula o frete com interpolação linear para valores exatos
         
         Args:
             uf: Estado (ex: "SP", "AC")
@@ -74,11 +74,11 @@ class TabelaPrecos:
                 if peso <= peso_limite:
                     return round(self.precos_capital[peso_limite], 2)
             
-            # Peso > 30kg
+            # Peso > 30kg - interpolação com base no valor de 30kg
             if peso > 30:
-                # Calcula adicional para CAPITAL
                 valor_base = self.precos_capital[30]  # 229.99
-                adicional = 5.00  # Valor por kg adicional (ajustar conforme necessidade)
+                # Usa o mesmo adicional de 5.00 por kg (ajustar conforme necessidade)
+                adicional = 5.00
                 return round(valor_base + (peso - 30) * adicional, 2)
         
         # ===== INTERIOR =====
@@ -86,16 +86,31 @@ class TabelaPrecos:
             if tipo_tarifa in self.tabela_interior:
                 tabela = self.tabela_interior[tipo_tarifa]
                 
-                # Encontra a faixa de peso
-                for peso_limite in sorted(tabela.keys()):
-                    if peso <= peso_limite:
-                        return round(tabela[peso_limite], 2)
+                # Pesos disponíveis na tabela (ordenados)
+                pesos = sorted(tabela.keys())
                 
-                # Peso > 100kg
-                if peso > 100:
-                    valor_base = tabela[100]
-                    adicional = 2.00  # Valor por kg adicional
-                    return round(valor_base + (peso - 100) * adicional, 2)
+                # Se o peso é menor que o menor peso da tabela
+                if peso <= pesos[0]:
+                    return round(tabela[pesos[0]], 2)
+                
+                # Se o peso é maior que o maior peso da tabela (100kg)
+                if peso >= pesos[-1]:
+                    return round(tabela[pesos[-1]], 2)
+                
+                # INTERPOLAÇÃO LINEAR
+                for i in range(len(pesos) - 1):
+                    if pesos[i] <= peso <= pesos[i + 1]:
+                        peso_baixo = pesos[i]
+                        peso_alto = pesos[i + 1]
+                        valor_baixo = tabela[peso_baixo]
+                        valor_alto = tabela[peso_alto]
+                        
+                        # Interpolação linear
+                        proporcao = (peso - peso_baixo) / (peso_alto - peso_baixo)
+                        valor = valor_baixo + (valor_alto - valor_baixo) * proporcao
+                        
+                        # Retorna o valor com 2 casas decimais (sem arredondar para cima)
+                        return round(valor, 2)
             
             return None
         
