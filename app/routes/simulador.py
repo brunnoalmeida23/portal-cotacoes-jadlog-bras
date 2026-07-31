@@ -414,15 +414,15 @@ async def simulador():
                                 </div>
                             </div>
                             <div class="promocao-bras">
-                                <div class="titulo">
-                                    <i class="bi bi-star-fill text-warning me-1"></i>
-                                    VALORES EXCLUSIVOS DA UNIDADE DA AV. VALTIER (BRÁS)
-                                </div>
-                                <div class="validade">
-                                    <i class="bi bi-calendar me-1"></i>
-                                    Válidos até Dezembro de 2026
-                                </div>
-                            </div>
+    <div class="titulo">
+        <i class="bi bi-star-fill text-warning me-1"></i>
+        VALORES EXCLUSIVOS DA UNIDADE DA AV. VAUTIER, 455 (BRÁS)
+    </div>
+    <div class="validade">
+        <i class="bi bi-calendar me-1"></i>
+        Válidos até Dezembro de 2026
+    </div>
+</div>
                         </div>
                         
                         <!-- BOTÕES -->
