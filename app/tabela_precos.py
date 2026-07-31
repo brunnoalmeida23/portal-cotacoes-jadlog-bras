@@ -1,7 +1,7 @@
 # ==================== TABELA DE PREÇOS ====================
 class TabelaPrecos:
     def __init__(self):
-        # 1. PREÇOS DO FLYER (CAPITAIS)
+        # 1. PREÇOS DO FLYER (CAPITAIS) - usado apenas para calcular lucro
         self.precos_capital = {
             1: 24.99,
             5: 49.99,
@@ -56,7 +56,6 @@ class TabelaPrecos:
         
         # 5. TABELA GLM COMPLETA POR UF E TIPO (para INTERIOR)
         # Valores extraídos da planilha GLM Pack e .Com LIEV.xlsx
-        # CORRIGIDO: Agora os valores de 30kg estão corretos para INTERIOR
         self.glm_interior = {
             "AC": {
                 "INTERIOR 1": {1: 88.14, 5: 90.78, 10: 98.97, 20: 130.12, 30: 154.99},
@@ -226,7 +225,18 @@ class TabelaPrecos:
             "TO": {1: 12.72, 5: 26.48, 10: 37.43, 20: 69.84, 30: 101.83}
         }
         
-        # 7. KG ADICIONAL PARA INTERIOR (acima de 30kg)
+        # 7. KG ADICIONAL PARA CAPITAL (acima de 30kg)
+        self.kg_adicional_capital = {
+            "AC": 4.24, "AL": 2.48, "AP": 4.24, "AM": 4.24,
+            "BA": 2.02, "CE": 3.99, "DF": 1.68, "ES": 1.68,
+            "GO": 1.68, "MA": 2.67, "MT": 2.74, "MS": 2.22,
+            "MG": 1.08, "PA": 2.67, "PB": 3.81, "PR": 1.08,
+            "PE": 3.14, "PI": 2.67, "RJ": 1.08, "RN": 4.24,
+            "RS": 1.68, "RO": 4.24, "RR": 4.24, "SC": 1.08,
+            "SP": 0.91, "SE": 2.48, "TO": 2.67
+        }
+        
+        # 8. KG ADICIONAL PARA INTERIOR (acima de 30kg)
         self.kg_adicional_interior = {
             "AC": {"INTERIOR 1": 29.57, "INTERIOR 2": 39.33, "INTERIOR 3": 59.89},
             "AL": {"INTERIOR 1": 25.24, "INTERIOR 2": 33.58, "INTERIOR 3": 51.13},
@@ -299,14 +309,29 @@ class TabelaPrecos:
         Interpola o lucro para um peso específico
         """
         if tipo_tarifa.startswith("CAPITAL"):
-            # Lucro = Preço do flyer - GLM
-            frete = self.calcular_frete(uf, tipo_tarifa, peso)
-            if frete is None:
-                return None
-            
+            # Para CAPITAL, o lucro é baseado no flyer
             if uf in self.custo_glm_capital:
-                custo = self.custo_glm_capital[uf]
-                lucro = frete - custo
+                # Busca o GLM para o peso
+                glm = self._buscar_glm(uf, tipo_tarifa, peso)
+                if glm is None:
+                    return None
+                
+                # Busca o preço do flyer
+                frete_flyer = None
+                for peso_limite in sorted(self.precos_capital.keys()):
+                    if peso <= peso_limite:
+                        frete_flyer = self.precos_capital[peso_limite]
+                        break
+                
+                if peso > 30:
+                    kg_adicional = self.kg_adicional_capital.get(uf, 5.00)
+                    frete_flyer = self.precos_capital[30] + (peso - 30) * kg_adicional
+                
+                if frete_flyer is None:
+                    return None
+                
+                # Lucro = Flyer - GLM
+                lucro = frete_flyer - glm
                 return round(lucro, 2)
             
             return None
@@ -330,7 +355,8 @@ class TabelaPrecos:
             if uf in self.glm_capital:
                 tabela = self.glm_capital[uf]
                 pesos_disponiveis = sorted(tabela.keys())
-                return self._interpolar_valor(tabela, peso, pesos_disponiveis)
+                kg_adicional = self.kg_adicional_capital.get(uf, 5.00)
+                return self._interpolar_valor(tabela, peso, pesos_disponiveis, kg_adicional)
             return None
         
         elif tipo_tarifa.startswith("INTERIOR"):
@@ -350,7 +376,7 @@ class TabelaPrecos:
     
     def calcular_frete(self, uf, tipo_tarifa, peso):
         """
-        Calcula o frete usando GLM + Lucro
+        Calcula o frete usando GLM + Lucro para TODOS os destinos
         
         Args:
             uf: Estado (ex: "SP", "AC")
@@ -358,48 +384,18 @@ class TabelaPrecos:
             peso: Peso em kg
         """
         
-        # ===== CAPITAL =====
-        if tipo_tarifa.startswith("CAPITAL"):
-            # 1. Busca o GLM para o UF
-            glm = self._buscar_glm(uf, tipo_tarifa, peso)
-            if glm is None:
-                return None
-            
-            # 2. Busca o preço do flyer
-            frete_flyer = None
-            for peso_limite in sorted(self.precos_capital.keys()):
-                if peso <= peso_limite:
-                    frete_flyer = self.precos_capital[peso_limite]
-                    break
-            
-            if peso > 30:
-                frete_flyer = self.precos_capital[30] + (peso - 30) * 5.00
-            
-            if frete_flyer is None:
-                return None
-            
-            # 3. Calcula o lucro (preço do flyer - GLM)
-            lucro = round(frete_flyer - glm, 2)
-            
-            # 4. Frete final = GLM + Lucro
-            return round(glm + lucro, 2)
+        # 1. Busca o GLM para o UF e tipo de tarifa
+        glm = self._buscar_glm(uf, tipo_tarifa, peso)
+        if glm is None:
+            return None
         
-        # ===== INTERIOR =====
-        elif tipo_tarifa.startswith("INTERIOR"):
-            # 1. Busca o GLM para o UF e tipo de tarifa
-            glm = self._buscar_glm(uf, tipo_tarifa, peso)
-            if glm is None:
-                return None
-            
-            # 2. Busca o lucro para o UF e tipo de tarifa
-            lucro = self._interpolar_lucro(uf, tipo_tarifa, peso)
-            if lucro is None:
-                return None
-            
-            # 3. Frete final = GLM + Lucro
-            return round(glm + lucro, 2)
+        # 2. Busca o lucro para o UF e tipo de tarifa
+        lucro = self._interpolar_lucro(uf, tipo_tarifa, peso)
+        if lucro is None:
+            return None
         
-        return None
+        # 3. Frete final = GLM + Lucro
+        return round(glm + lucro, 2)
     
     def calcular_lucro(self, uf, tipo_tarifa, peso):
         """Calcula o lucro do cliente (NÃO MOSTRAR NO FRONTEND)"""
