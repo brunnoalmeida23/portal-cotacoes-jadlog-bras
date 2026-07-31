@@ -195,7 +195,7 @@ class CupomPDF:
         y -= 9 * mm
         c.setFont("Helvetica", 6)
         c.setFillColor(VERMELHO_JADLOG)
-        c.drawString(margem, y, "VALORES EXCLUSIVOS DA AV. VALTIER (BRÁS)")
+        c.drawString(margem, y, "VALORES EXCLUSIVOS DA AV. VAUTIER, 455 (BRÁS)")
         
         y -= 4 * mm
         c.setFont("Helvetica", 5)
