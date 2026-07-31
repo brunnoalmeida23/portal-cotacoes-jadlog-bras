@@ -143,6 +143,17 @@ def buscar_cotacoes_por_cliente(cpf_cnpj):
         print(f"❌ Erro ao buscar cotações do cliente: {e}")
         return []
 
+def buscar_cotacoes_por_nome(nome):
+    """Busca cotações pelo nome do cliente (busca parcial)"""
+    if not supabase:
+        return []
+    try:
+        response = supabase.table("cotacoes").select("*").ilike("cliente_nome", f"%{nome}%").order("data_criacao", desc=True).execute()
+        return response.data
+    except Exception as e:
+        print(f"❌ Erro ao buscar cotações por nome: {str(e)}")
+        return []
+
 # ==================== GERAR NÚMERO DE COTAÇÃO ====================
 
 def gerar_numero_cotacao():
