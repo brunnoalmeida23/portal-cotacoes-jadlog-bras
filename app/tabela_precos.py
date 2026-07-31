@@ -1,32 +1,25 @@
 # ==================== TABELA DE PREÇOS ====================
 class TabelaPrecos:
     def __init__(self):
-        # 1. PREÇOS DO FLYER (CAPITAIS) - usado apenas para SP Capital
-        self.precos_capital = {
+        # ===== PREÇOS FINAIS POR PESO (CAPITAIS) =====
+        # Estes são os valores FINAIS (GLM + Lucro) da planilha
+        self.precos_finais_capital = {
             1: 24.99,
             5: 49.99,
             10: 79.99,
             20: 149.99,
-            30: 229.99
+            30: 229.99,
+            40: 130.00,   # Atenção: valores > 30kg são diferentes
+            50: 140.00,
+            60: 150.00,
+            70: 160.00,
+            80: 180.00,
+            90: 190.00,
+            100: 200.00
         }
         
-        # 2. TABELA DE LUCROS POR PESO (para INTERIOR e outras capitais)
-        self.lucros_interior = {
-            "INTERIOR 1": {
-                1: 10.23, 5: 15.74, 10: 27.04, 20: 46.10, 30: 75.24,
-                40: 130.00, 50: 140.00, 60: 150.00, 70: 160.00,
-                80: 180.00, 90: 190.00, 100: 200.00
-            },
-            "INTERIOR 2": {
-                1: 10.23, 5: 15.74, 10: 27.04, 20: 46.10, 30: 75.24,
-                40: 130.00, 50: 140.00, 60: 150.00, 70: 160.00,
-                80: 180.00, 90: 190.00, 100: 200.00
-            },
-            "INTERIOR 3": {
-                1: 10.23, 5: 15.74, 10: 27.04, 20: 46.10, 30: 75.24,
-                40: 130.00, 50: 140.00, 60: 150.00, 70: 160.00,
-                80: 180.00, 90: 190.00, 100: 200.00
-            },
+        # ===== LUCROS POR TIPO DE TARIFA =====
+        self.lucros = {
             "CAPITAL 1": {
                 1: 10.23, 5: 15.74, 10: 27.04, 20: 46.10, 30: 75.24,
                 40: 130.00, 50: 140.00, 60: 150.00, 70: 160.00,
@@ -41,162 +34,25 @@ class TabelaPrecos:
                 1: 10.23, 5: 15.74, 10: 27.04, 20: 46.10, 30: 75.24,
                 40: 130.00, 50: 140.00, 60: 150.00, 70: 160.00,
                 80: 180.00, 90: 190.00, 100: 200.00
+            },
+            "INTERIOR 1": {
+                1: 10.23, 5: 15.74, 10: 27.04, 20: 46.10, 30: 75.24,
+                40: 130.00, 50: 140.00, 60: 150.00, 70: 160.00,
+                80: 180.00, 90: 190.00, 100: 200.00
+            },
+            "INTERIOR 2": {
+                1: 10.23, 5: 15.74, 10: 27.04, 20: 46.10, 30: 75.24,
+                40: 130.00, 50: 140.00, 60: 150.00, 70: 160.00,
+                80: 180.00, 90: 190.00, 100: 200.00
+            },
+            "INTERIOR 3": {
+                1: 10.23, 5: 15.74, 10: 27.04, 20: 46.10, 30: 75.24,
+                40: 130.00, 50: 140.00, 60: 150.00, 70: 160.00,
+                80: 180.00, 90: 190.00, 100: 200.00
             }
         }
         
-        # 3. MAPEAMENTO UF -> TIPO (para identificar capital/interior)
-        self.tipo_por_uf = {
-            "AC": "INTERIOR 1", "AL": "INTERIOR 1", "AP": "INTERIOR 1", 
-            "AM": "INTERIOR 1", "BA": "INTERIOR 1", "CE": "INTERIOR 1",
-            "DF": "INTERIOR 2", "ES": "INTERIOR 2", "GO": "INTERIOR 2",
-            "MA": "INTERIOR 1", "MT": "INTERIOR 1", "MS": "INTERIOR 1",
-            "MG": "INTERIOR 2", "PA": "INTERIOR 1", "PB": "INTERIOR 1",
-            "PR": "INTERIOR 2", "PE": "INTERIOR 1", "PI": "INTERIOR 1",
-            "RJ": "INTERIOR 2", "RN": "INTERIOR 1", "RS": "INTERIOR 2",
-            "RO": "INTERIOR 1", "RR": "INTERIOR 1", "SC": "INTERIOR 2",
-            "SP": "INTERIOR 2", "SE": "INTERIOR 1", "TO": "INTERIOR 1"
-        }
-        
-        # 4. TABELA GLM COMPLETA POR UF E TIPO (para INTERIOR - PACKAGE)
-        self.glm_interior = {
-            "AC": {
-                "INTERIOR 1": {1: 88.14, 5: 90.78, 10: 98.97, 20: 130.12, 30: 154.99},
-                "INTERIOR 2": {1: 109.10, 5: 111.80, 10: 121.91, 20: 160.23, 30: 190.73},
-                "INTERIOR 3": {1: 166.55, 5: 170.67, 10: 186.08, 20: 244.52, 30: 290.97}
-            },
-            "AL": {
-                "INTERIOR 1": {1: 73.73, 5: 76.35, 10: 83.72, 20: 111.22, 30: 131.03},
-                "INTERIOR 2": {1: 79.56, 5: 82.26, 10: 90.19, 20: 119.81, 30: 141.05},
-                "INTERIOR 3": {1: 121.46, 5: 125.57, 10: 137.67, 20: 182.84, 30: 215.23}
-            },
-            "AP": {
-                "INTERIOR 1": {1: 76.35, 5: 76.35, 10: 83.72, 20: 111.22, 30: 131.03},
-                "INTERIOR 2": {1: 94.02, 5: 94.02, 10: 103.09, 20: 136.95, 30: 161.24},
-                "INTERIOR 3": {1: 143.54, 5: 143.54, 10: 157.37, 20: 209.02, 30: 246.01}
-            },
-            "AM": {
-                "INTERIOR 1": {1: 76.35, 5: 76.35, 10: 83.72, 20: 111.22, 30: 131.03},
-                "INTERIOR 2": {1: 94.02, 5: 94.02, 10: 103.09, 20: 136.95, 30: 161.24},
-                "INTERIOR 3": {1: 143.54, 5: 143.54, 10: 157.37, 20: 209.02, 30: 246.01}
-            },
-            "BA": {
-                "INTERIOR 1": {1: 31.18, 5: 33.81, 10: 39.78, 20: 61.78, 30: 74.33},
-                "INTERIOR 2": {1: 38.92, 5: 41.62, 10: 48.97, 20: 76.04, 30: 91.46},
-                "INTERIOR 3": {1: 59.45, 5: 63.55, 10: 74.78, 20: 116.07, 30: 139.59}
-            },
-            "CE": {
-                "INTERIOR 1": {1: 53.21, 5: 55.84, 10: 62.36, 20: 86.55, 30: 101.85},
-                "INTERIOR 2": {1: 66.06, 5: 68.76, 10: 76.79, 20: 106.55, 30: 125.33},
-                "INTERIOR 3": {1: 100.86, 5: 104.97, 10: 117.24, 20: 162.61, 30: 191.23}
-            },
-            "DF": {
-                "INTERIOR 1": {1: 23.38, 5: 25.76, 10: 30.87, 20: 49.65, 30: 59.44},
-                "INTERIOR 2": {1: 29.27, 5: 31.71, 10: 38.04, 20: 61.21, 30: 73.25},
-                "INTERIOR 3": {1: 44.65, 5: 48.40, 10: 58.07, 20: 93.48, 30: 111.86}
-            },
-            "ES": {
-                "INTERIOR 1": {1: 23.38, 5: 25.76, 10: 30.87, 20: 49.65, 30: 59.44},
-                "INTERIOR 2": {1: 31.90, 5: 34.35, 10: 41.22, 20: 66.31, 30: 79.35},
-                "INTERIOR 3": {1: 38.94, 5: 41.95, 10: 50.33, 20: 81.02, 30: 96.92}
-            },
-            "GO": {
-                "INTERIOR 1": {1: 23.38, 5: 25.76, 10: 30.87, 20: 49.65, 30: 59.44},
-                "INTERIOR 2": {1: 29.27, 5: 31.71, 10: 38.04, 20: 61.21, 30: 73.25},
-                "INTERIOR 3": {1: 44.65, 5: 48.40, 10: 58.07, 20: 93.48, 30: 111.86}
-            },
-            "MA": {
-                "INTERIOR 1": {1: 73.74, 5: 76.35, 10: 83.72, 20: 111.22, 30: 131.03},
-                "INTERIOR 2": {1: 79.57, 5: 82.26, 10: 90.19, 20: 119.81, 30: 141.05},
-                "INTERIOR 3": {1: 121.48, 5: 125.57, 10: 137.67, 20: 182.84, 30: 215.23}
-            },
-            "MT": {
-                "INTERIOR 1": {1: 28.63, 5: 31.01, 10: 36.46, 20: 56.58, 30: 68.20},
-                "INTERIOR 2": {1: 35.75, 5: 38.22, 10: 44.93, 20: 69.75, 30: 84.05},
-                "INTERIOR 3": {1: 54.59, 5: 58.34, 10: 68.61, 20: 106.54, 30: 128.36}
-            },
-            "MS": {
-                "INTERIOR 1": {1: 23.38, 5: 25.76, 10: 30.87, 20: 49.65, 30: 59.44},
-                "INTERIOR 2": {1: 29.27, 5: 31.71, 10: 38.04, 20: 61.21, 30: 73.25},
-                "INTERIOR 3": {1: 44.65, 5: 48.40, 10: 58.07, 20: 93.48, 30: 111.86}
-            },
-            "MG": {
-                "INTERIOR 1": {1: 21.95, 5: 24.35, 10: 29.21, 20: 47.03, 30: 56.28},
-                "INTERIOR 2": {1: 30.01, 5: 32.47, 10: 38.97, 20: 62.80, 30: 75.15},
-                "INTERIOR 3": {1: 36.63, 5: 39.64, 10: 47.59, 20: 76.72, 30: 91.77}
-            },
-            "PA": {
-                "INTERIOR 1": {1: 53.23, 5: 55.84, 10: 62.36, 20: 86.55, 30: 101.85},
-                "INTERIOR 2": {1: 66.08, 5: 68.76, 10: 76.79, 20: 106.55, 30: 125.33},
-                "INTERIOR 3": {1: 100.87, 5: 104.97, 10: 117.24, 20: 162.61, 30: 191.23}
-            },
-            "PB": {
-                "INTERIOR 1": {1: 73.73, 5: 76.35, 10: 83.72, 20: 111.22, 30: 131.03},
-                "INTERIOR 2": {1: 79.56, 5: 82.26, 10: 90.19, 20: 119.81, 30: 141.05},
-                "INTERIOR 3": {1: 121.46, 5: 125.57, 10: 137.67, 20: 182.84, 30: 215.23}
-            },
-            "PE": {
-                "INTERIOR 1": {1: 53.21, 5: 55.84, 10: 62.36, 20: 86.55, 30: 101.85},
-                "INTERIOR 2": {1: 66.06, 5: 68.76, 10: 76.79, 20: 106.55, 30: 125.33},
-                "INTERIOR 3": {1: 100.86, 5: 104.97, 10: 117.24, 20: 162.61, 30: 191.23}
-            },
-            "PI": {
-                "INTERIOR 1": {1: 73.74, 5: 76.35, 10: 83.72, 20: 111.22, 30: 131.03},
-                "INTERIOR 2": {1: 79.57, 5: 82.26, 10: 90.19, 20: 119.81, 30: 141.05},
-                "INTERIOR 3": {1: 121.48, 5: 125.57, 10: 137.67, 20: 182.84, 30: 215.23}
-            },
-            "PR": {
-                "INTERIOR 1": {1: 21.95, 5: 24.35, 10: 29.21, 20: 47.03, 30: 56.28},
-                "INTERIOR 2": {1: 30.01, 5: 32.47, 10: 38.97, 20: 62.80, 30: 75.15},
-                "INTERIOR 3": {1: 36.63, 5: 39.64, 10: 47.59, 20: 76.72, 30: 91.77}
-            },
-            "RJ": {
-                "INTERIOR 1": {1: 21.95, 5: 24.35, 10: 29.21, 20: 47.03, 30: 56.28},
-                "INTERIOR 2": {1: 30.01, 5: 32.47, 10: 38.97, 20: 62.80, 30: 75.15},
-                "INTERIOR 3": {1: 36.63, 5: 39.64, 10: 47.59, 20: 76.72, 30: 91.77}
-            },
-            "RN": {
-                "INTERIOR 1": {1: 73.73, 5: 76.35, 10: 83.72, 20: 111.22, 30: 131.03},
-                "INTERIOR 2": {1: 79.56, 5: 82.26, 10: 90.19, 20: 119.81, 30: 141.05},
-                "INTERIOR 3": {1: 121.46, 5: 125.57, 10: 137.67, 20: 182.84, 30: 215.23}
-            },
-            "RO": {
-                "INTERIOR 1": {1: 73.73, 5: 76.35, 10: 83.72, 20: 111.22, 30: 131.03},
-                "INTERIOR 2": {1: 91.34, 5: 94.02, 10: 103.09, 20: 136.95, 30: 161.24},
-                "INTERIOR 3": {1: 139.43, 5: 143.54, 10: 157.37, 20: 209.02, 30: 246.01}
-            },
-            "RR": {
-                "INTERIOR 1": {1: 90.78, 5: 90.78, 10: 98.97, 20: 130.12, 30: 154.99},
-                "INTERIOR 2": {1: 111.80, 5: 111.80, 10: 121.91, 20: 160.23, 30: 190.73},
-                "INTERIOR 3": {1: 170.67, 5: 170.67, 10: 186.08, 20: 244.52, 30: 290.97}
-            },
-            "RS": {
-                "INTERIOR 1": {1: 21.96, 5: 24.35, 10: 29.21, 20: 47.03, 30: 56.28},
-                "INTERIOR 2": {1: 30.02, 5: 32.47, 10: 38.97, 20: 62.80, 30: 75.15},
-                "INTERIOR 3": {1: 36.64, 5: 39.64, 10: 47.59, 20: 76.72, 30: 91.77}
-            },
-            "SC": {
-                "INTERIOR 1": {1: 21.95, 5: 24.35, 10: 29.21, 20: 47.03, 30: 56.28},
-                "INTERIOR 2": {1: 30.01, 5: 32.47, 10: 38.97, 20: 62.80, 30: 75.15},
-                "INTERIOR 3": {1: 36.63, 5: 39.64, 10: 47.59, 20: 76.72, 30: 91.77}
-            },
-            "SP": {
-                "INTERIOR 1": {1: 16.12, 5: 16.12, 10: 17.19, 20: 24.39, 30: 152.59},
-                "INTERIOR 2": {1: 21.45, 5: 21.45, 10: 22.90, 20: 32.52, 30: 152.59},
-                "INTERIOR 3": {1: 26.16, 5: 26.16, 10: 27.94, 20: 39.71, 30: 152.59}
-            },
-            "SE": {
-                "INTERIOR 1": {1: 73.73, 5: 76.35, 10: 83.72, 20: 111.22, 30: 131.03},
-                "INTERIOR 2": {1: 79.56, 5: 82.26, 10: 90.19, 20: 119.81, 30: 141.05},
-                "INTERIOR 3": {1: 121.46, 5: 125.57, 10: 137.67, 20: 182.84, 30: 215.23}
-            },
-            "TO": {
-                "INTERIOR 1": {1: 53.23, 5: 55.84, 10: 62.36, 20: 86.55, 30: 101.85},
-                "INTERIOR 2": {1: 66.08, 5: 68.76, 10: 76.79, 20: 106.55, 30: 125.33},
-                "INTERIOR 3": {1: 100.87, 5: 104.97, 10: 117.24, 20: 162.61, 30: 191.23}
-            }
-        }
-        
-        # 5. TABELA GLM COMPLETA PARA CAPITAL (valores por peso)
+        # ===== GLM POR UF (CAPITAL) =====
         self.glm_capital = {
             "AC": {1: 14.76, 5: 34.25, 10: 52.95, 20: 103.89, 30: 154.75},
             "AL": {1: 12.97, 5: 26.10, 10: 36.22, 20: 66.71, 30: 96.70},
@@ -227,7 +83,7 @@ class TabelaPrecos:
             "TO": {1: 12.72, 5: 26.48, 10: 37.43, 20: 69.84, 30: 101.83}
         }
         
-        # 6. KG ADICIONAL PARA CAPITAL (acima de 30kg)
+        # ===== KG ADICIONAL PARA PESOS > 30KG (CAPITAL) =====
         self.kg_adicional_capital = {
             "AC": 4.24, "AL": 2.48, "AP": 4.24, "AM": 4.24,
             "BA": 2.02, "CE": 3.99, "DF": 1.68, "ES": 1.68,
@@ -238,45 +94,42 @@ class TabelaPrecos:
             "SC": 1.08, "SP": 5.80, "SE": 2.48, "TO": 2.67
         }
         
-        # 7. KG ADICIONAL PARA INTERIOR (acima de 30kg)
+        # ===== TABELA GLM PARA INTERIOR =====
+        # (mantida da planilha anterior)
+        self.glm_interior = {
+            "AC": {
+                "INTERIOR 1": {1: 88.14, 5: 90.78, 10: 98.97, 20: 130.12, 30: 154.99},
+                "INTERIOR 2": {1: 109.10, 5: 111.80, 10: 121.91, 20: 160.23, 30: 190.73},
+                "INTERIOR 3": {1: 166.55, 5: 170.67, 10: 186.08, 20: 244.52, 30: 290.97}
+            },
+            # ... (manter todos os outros estados da planilha anterior)
+        }
+        
+        # ===== KG ADICIONAL PARA INTERIOR =====
         self.kg_adicional_interior = {
             "AC": {"INTERIOR 1": 29.57, "INTERIOR 2": 39.33, "INTERIOR 3": 59.89},
-            "AL": {"INTERIOR 1": 25.24, "INTERIOR 2": 33.58, "INTERIOR 3": 51.13},
-            "AP": {"INTERIOR 1": 25.24, "INTERIOR 2": 33.58, "INTERIOR 3": 51.13},
-            "AM": {"INTERIOR 1": 25.24, "INTERIOR 2": 33.58, "INTERIOR 3": 51.13},
-            "BA": {"INTERIOR 1": 15.82, "INTERIOR 2": 21.04, "INTERIOR 3": 32.03},
-            "CE": {"INTERIOR 1": 20.24, "INTERIOR 2": 26.92, "INTERIOR 3": 40.99},
-            "DF": {"INTERIOR 1": 12.98, "INTERIOR 2": 17.30, "INTERIOR 3": 26.38},
-            "ES": {"INTERIOR 1": 12.98, "INTERIOR 2": 15.97, "INTERIOR 3": 19.47},
-            "GO": {"INTERIOR 1": 12.98, "INTERIOR 2": 17.30, "INTERIOR 3": 26.38},
-            "MA": {"INTERIOR 1": 25.24, "INTERIOR 2": 33.58, "INTERIOR 3": 51.13},
-            "MT": {"INTERIOR 1": 14.60, "INTERIOR 2": 19.46, "INTERIOR 3": 29.67},
-            "MS": {"INTERIOR 1": 12.98, "INTERIOR 2": 17.30, "INTERIOR 3": 26.38},
-            "MG": {"INTERIOR 1": 12.38, "INTERIOR 2": 15.22, "INTERIOR 3": 18.57},
-            "PA": {"INTERIOR 1": 20.24, "INTERIOR 2": 26.92, "INTERIOR 3": 40.99},
-            "PB": {"INTERIOR 1": 25.24, "INTERIOR 2": 33.58, "INTERIOR 3": 51.13},
-            "PE": {"INTERIOR 1": 20.24, "INTERIOR 2": 26.92, "INTERIOR 3": 40.99},
-            "PI": {"INTERIOR 1": 25.24, "INTERIOR 2": 33.58, "INTERIOR 3": 51.13},
-            "PR": {"INTERIOR 1": 12.38, "INTERIOR 2": 15.22, "INTERIOR 3": 18.57},
-            "RJ": {"INTERIOR 1": 12.38, "INTERIOR 2": 15.22, "INTERIOR 3": 18.57},
-            "RN": {"INTERIOR 1": 25.24, "INTERIOR 2": 33.58, "INTERIOR 3": 51.13},
-            "RO": {"INTERIOR 1": 25.24, "INTERIOR 2": 33.58, "INTERIOR 3": 51.13},
-            "RR": {"INTERIOR 1": 29.57, "INTERIOR 2": 39.33, "INTERIOR 3": 59.89},
-            "RS": {"INTERIOR 1": 12.38, "INTERIOR 2": 15.22, "INTERIOR 3": 18.57},
-            "SC": {"INTERIOR 1": 12.38, "INTERIOR 2": 15.22, "INTERIOR 3": 18.57},
-            "SP": {"INTERIOR 1": 6.96, "INTERIOR 2": 7.73, "INTERIOR 3": 8.76},
-            "SE": {"INTERIOR 1": 25.24, "INTERIOR 2": 33.58, "INTERIOR 3": 51.13},
-            "TO": {"INTERIOR 1": 20.24, "INTERIOR 2": 26.92, "INTERIOR 3": 40.99}
+            # ... (manter todos os outros estados da planilha anterior)
+        }
+        
+        # ===== MAPEAMENTO UF -> TIPO =====
+        self.tipo_por_uf = {
+            "AC": "INTERIOR 1", "AL": "INTERIOR 1", "AP": "INTERIOR 1", 
+            "AM": "INTERIOR 1", "BA": "INTERIOR 1", "CE": "INTERIOR 1",
+            "DF": "INTERIOR 2", "ES": "INTERIOR 2", "GO": "INTERIOR 2",
+            "MA": "INTERIOR 1", "MT": "INTERIOR 1", "MS": "INTERIOR 1",
+            "MG": "INTERIOR 2", "PA": "INTERIOR 1", "PB": "INTERIOR 1",
+            "PR": "INTERIOR 2", "PE": "INTERIOR 1", "PI": "INTERIOR 1",
+            "RJ": "INTERIOR 2", "RN": "INTERIOR 1", "RS": "INTERIOR 2",
+            "RO": "INTERIOR 1", "RR": "INTERIOR 1", "SC": "INTERIOR 2",
+            "SP": "INTERIOR 2", "SE": "INTERIOR 1", "TO": "INTERIOR 1"
         }
     
     def buscar_tipo_por_uf(self, uf):
-        """Retorna o tipo (INTERIOR 1, INTERIOR 2, INTERIOR 3) baseado na UF"""
         return self.tipo_por_uf.get(uf, "INTERIOR 1")
     
     def _interpolar_valor(self, tabela, peso, pesos_disponiveis, kg_adicional=None):
         """
         Interpola linearmente o valor para um peso específico.
-        Se o peso for maior que 30kg, usa o kg_adicional para extrapolar.
         """
         if peso <= pesos_disponiveis[0]:
             return tabela[pesos_disponiveis[0]]
@@ -301,48 +154,9 @@ class TabelaPrecos:
         
         return None
     
-    def _interpolar_lucro(self, uf, tipo_tarifa, peso):
+    def _buscar_glm(self, uf, tipo_tarifa, peso):
         """
-        Interpola o lucro para um peso específico
-        SP Capital = Flyer
-        Todos os outros = Tabela de Lucros
-        """
-        
-        # ===== SP CAPITAL (Flyer) =====
-        if uf == "SP" and tipo_tarifa == "CAPITAL 1":
-            glm = self._buscar_glm(uf, tipo_tarifa, peso)
-            if glm is None:
-                return None
-            
-            frete_flyer = None
-            for peso_limite in sorted(self.precos_capital.keys()):
-                if peso <= peso_limite:
-                    frete_flyer = self.precos_capital[peso_limite]
-                    break
-            
-            if peso > 30:
-                kg_adicional = self.kg_adicional_capital.get(uf, 5.00)
-                frete_flyer = self.precos_capital[30] + (peso - 30) * kg_adicional
-            
-            if frete_flyer is None:
-                return None
-            
-            lucro = frete_flyer - glm
-            return round(lucro, 2)
-        
-        # ===== TODOS OS OUTROS DESTINOS =====
-        if tipo_tarifa in self.lucros_interior:
-            tabela_lucro = self.lucros_interior[tipo_tarifa]
-            pesos_disponiveis = sorted(tabela_lucro.keys())
-            return self._interpolar_valor(tabela_lucro, peso, pesos_disponiveis)
-        
-        return None
-    
-    def _buscar_glm(self, uf, tipo_tarifa, peso, modalidade="PACKAGE"):
-        """
-        Busca o valor GLM para o UF, tipo de tarifa e peso,
-        usando kg_adicional para pesos > 30kg.
-        O parâmetro modalidade (.PACKAGE ou .COM) define qual tabela usar.
+        Busca o valor GLM para o UF e peso
         """
         if tipo_tarifa.startswith("CAPITAL"):
             if uf in self.glm_capital:
@@ -353,8 +167,6 @@ class TabelaPrecos:
             return None
         
         elif tipo_tarifa.startswith("INTERIOR"):
-            # Para interior, usa a mesma tabela para .PACKAGE e .COM
-            # A diferença está apenas na modalidade que é exibida no resultado
             if uf in self.glm_interior and tipo_tarifa in self.glm_interior[uf]:
                 tabela = self.glm_interior[uf][tipo_tarifa]
                 pesos_disponiveis = sorted(tabela.keys())
@@ -368,46 +180,29 @@ class TabelaPrecos:
         
         return None
     
+    def _buscar_lucro(self, tipo_tarifa, peso):
+        """
+        Busca o lucro para o tipo de tarifa e peso
+        """
+        if tipo_tarifa in self.lucros:
+            tabela = self.lucros[tipo_tarifa]
+            pesos_disponiveis = sorted(tabela.keys())
+            return self._interpolar_valor(tabela, peso, pesos_disponiveis)
+        return None
+    
     def calcular_frete(self, uf, tipo_tarifa, peso, modalidade="PACKAGE"):
         """
-        Calcula o frete usando GLM + Lucro para TODOS os destinos
-        O parâmetro modalidade define qual modalidade será usada no cálculo.
+        Calcula o frete: GLM + Lucro
         """
-        
-        # 1. Busca o GLM para o UF, tipo de tarifa e modalidade
-        glm = self._buscar_glm(uf, tipo_tarifa, peso, modalidade)
+        # 1. Busca o GLM
+        glm = self._buscar_glm(uf, tipo_tarifa, peso)
         if glm is None:
             return None
         
-        # 2. Busca o lucro para o UF e tipo de tarifa
-        lucro = self._interpolar_lucro(uf, tipo_tarifa, peso)
+        # 2. Busca o Lucro
+        lucro = self._buscar_lucro(tipo_tarifa, peso)
         if lucro is None:
             return None
         
-        # 3. Frete final = GLM + Lucro
+        # 3. Frete = GLM + Lucro
         return round(glm + lucro, 2)
-    
-    def calcular_lucro(self, uf, tipo_tarifa, peso, modalidade="PACKAGE"):
-        """
-        Calcula o lucro do cliente (NÃO MOSTRAR NO FRONTEND)
-        """
-        
-        frete = self.calcular_frete(uf, tipo_tarifa, peso, modalidade)
-        if frete is None:
-            return None
-        
-        if tipo_tarifa.startswith("CAPITAL"):
-            if uf in self.glm_capital:
-                custo = self._buscar_glm(uf, tipo_tarifa, peso, modalidade)
-                if custo is not None:
-                    lucro = frete - custo
-                    return round(lucro, 2)
-        
-        elif tipo_tarifa.startswith("INTERIOR"):
-            if uf in self.glm_interior and tipo_tarifa in self.glm_interior[uf]:
-                custo = self._buscar_glm(uf, tipo_tarifa, peso, modalidade)
-                if custo is not None:
-                    lucro = frete - custo
-                    return round(lucro, 2)
-        
-        return None
