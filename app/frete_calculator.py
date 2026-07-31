@@ -1,76 +1,116 @@
 from app.tabela_precos import TabelaPrecos
+import re
+import os
+
+# Tenta importar a base de CEPs
+try:
+    from app.ceps_data import CEPS_DATABASE
+    print(f"✅ Base de CEPs carregada: {len(CEPS_DATABASE)} registros")
+except ImportError:
+    print("⚠️ Arquivo ceps_data.py não encontrado. Usando base de fallback.")
+    # Base de fallback (mínima)
+    CEPS_DATABASE = {
+        "01000": {"cidade": "São Paulo", "uf": "SP", "tipo_tarifa": "CAPITAL 1", "prazo": 1, "seguro": 0.0066},
+        "02000": {"cidade": "São Paulo", "uf": "SP", "tipo_tarifa": "CAPITAL 1", "prazo": 1, "seguro": 0.0066},
+        "03000": {"cidade": "São Paulo", "uf": "SP", "tipo_tarifa": "CAPITAL 1", "prazo": 1, "seguro": 0.0066},
+        "04000": {"cidade": "São Paulo", "uf": "SP", "tipo_tarifa": "CAPITAL 1", "prazo": 1, "seguro": 0.0066},
+        "05000": {"cidade": "São Paulo", "uf": "SP", "tipo_tarifa": "CAPITAL 1", "prazo": 1, "seguro": 0.0066},
+        "20000": {"cidade": "Rio de Janeiro", "uf": "RJ", "tipo_tarifa": "CAPITAL 1", "prazo": 2, "seguro": 0.0066},
+        "30000": {"cidade": "Belo Horizonte", "uf": "MG", "tipo_tarifa": "CAPITAL 1", "prazo": 2, "seguro": 0.0066},
+        "40000": {"cidade": "Salvador", "uf": "BA", "tipo_tarifa": "CAPITAL 1", "prazo": 3, "seguro": 0.0066},
+        "50000": {"cidade": "Recife", "uf": "PE", "tipo_tarifa": "CAPITAL 1", "prazo": 3, "seguro": 0.0066},
+        "60000": {"cidade": "Fortaleza", "uf": "CE", "tipo_tarifa": "CAPITAL 1", "prazo": 3, "seguro": 0.0066},
+        "70000": {"cidade": "Brasília", "uf": "DF", "tipo_tarifa": "CAPITAL 1", "prazo": 2, "seguro": 0.0066},
+        "80000": {"cidade": "Curitiba", "uf": "PR", "tipo_tarifa": "CAPITAL 1", "prazo": 2, "seguro": 0.0066},
+        "90000": {"cidade": "Porto Alegre", "uf": "RS", "tipo_tarifa": "CAPITAL 1", "prazo": 2, "seguro": 0.0066},
+    }
 
 class FreteCalculator:
     def __init__(self):
         self.tabela = TabelaPrecos()
-        # Base de dados de CEPs (simplificada para exemplo)
-        self.base_ceps = {
-            "01000": {"cidade": "São Paulo", "uf": "SP", "tipo_tarifa": "CAPITAL 1", "prazo": 1},
-            "02000": {"cidade": "São Paulo", "uf": "SP", "tipo_tarifa": "CAPITAL 1", "prazo": 1},
-            "03000": {"cidade": "São Paulo", "uf": "SP", "tipo_tarifa": "CAPITAL 1", "prazo": 1},
-            "04000": {"cidade": "São Paulo", "uf": "SP", "tipo_tarifa": "CAPITAL 1", "prazo": 1},
-            "05000": {"cidade": "São Paulo", "uf": "SP", "tipo_tarifa": "CAPITAL 1", "prazo": 1},
-            "06000": {"cidade": "São Paulo", "uf": "SP", "tipo_tarifa": "CAPITAL 1", "prazo": 1},
-            "07000": {"cidade": "São Paulo", "uf": "SP", "tipo_tarifa": "CAPITAL 1", "prazo": 1},
-            "08000": {"cidade": "São Paulo", "uf": "SP", "tipo_tarifa": "CAPITAL 1", "prazo": 1},
-            "09000": {"cidade": "São Paulo", "uf": "SP", "tipo_tarifa": "CAPITAL 1", "prazo": 1},
-            "10000": {"cidade": "Rio de Janeiro", "uf": "RJ", "tipo_tarifa": "CAPITAL 1", "prazo": 2},
-            "20000": {"cidade": "Rio de Janeiro", "uf": "RJ", "tipo_tarifa": "CAPITAL 1", "prazo": 2},
-            "30000": {"cidade": "Belo Horizonte", "uf": "MG", "tipo_tarifa": "CAPITAL 1", "prazo": 2},
-            "40000": {"cidade": "Salvador", "uf": "BA", "tipo_tarifa": "CAPITAL 1", "prazo": 3},
-            "50000": {"cidade": "Recife", "uf": "PE", "tipo_tarifa": "CAPITAL 1", "prazo": 3},
-            "60000": {"cidade": "Fortaleza", "uf": "CE", "tipo_tarifa": "CAPITAL 1", "prazo": 3},
-            "70000": {"cidade": "Brasília", "uf": "DF", "tipo_tarifa": "CAPITAL 1", "prazo": 2},
-            "80000": {"cidade": "Curitiba", "uf": "PR", "tipo_tarifa": "CAPITAL 1", "prazo": 2},
-            "90000": {"cidade": "Porto Alegre", "uf": "RS", "tipo_tarifa": "CAPITAL 1", "prazo": 2},
-            # INTERIOR - Exemplos
-            "69900": {"cidade": "Rio Branco", "uf": "AC", "tipo_tarifa": "INTERIOR 1", "prazo": 7},
-            "69945": {"cidade": "Cruzeiro do Sul", "uf": "AC", "tipo_tarifa": "INTERIOR 1", "prazo": 10},
-            "57000": {"cidade": "Maceió", "uf": "AL", "tipo_tarifa": "CAPITAL 1", "prazo": 4},
-            "68900": {"cidade": "Macapá", "uf": "AP", "tipo_tarifa": "CAPITAL 1", "prazo": 8},
-            "69000": {"cidade": "Manaus", "uf": "AM", "tipo_tarifa": "CAPITAL 1", "prazo": 7},
-            "40000": {"cidade": "Salvador", "uf": "BA", "tipo_tarifa": "CAPITAL 1", "prazo": 3},
-            # ... mais CEPs podem ser adicionados conforme necessário
-        }
-        
+        self.base_ceps = CEPS_DATABASE
+        self.cache_ceps = {}
+        print(f"📊 FreteCalculator inicializado com {len(self.base_ceps)} CEPs")
+
     def buscar_cep(self, cep):
-        """Busca informações de um CEP na base de dados"""
+        """
+        Busca informações de um CEP na base de dados
+        """
         # Remove formatação
         cep_limpo = re.sub(r"\D", "", cep)
         
-        # Se o CEP tem 8 dígitos, pega os 5 primeiros para consulta
+        if not cep_limpo:
+            return None
+        
+        # Verifica cache
+        if cep_limpo in self.cache_ceps:
+            return self.cache_ceps[cep_limpo]
+        
+        # Tenta com 5 dígitos (prefixo)
         if len(cep_limpo) >= 5:
             prefixo = cep_limpo[:5]
-        else:
-            prefixo = cep_limpo
             
-        # Busca na base de CEPs
-        if prefixo in self.base_ceps:
-            return self.base_ceps[prefixo]
+            # Busca exata pelo prefixo
+            if prefixo in self.base_ceps:
+                self.cache_ceps[cep_limpo] = self.base_ceps[prefixo]
+                print(f"✅ CEP {cep_limpo} encontrado: {self.base_ceps[prefixo]}")
+                return self.base_ceps[prefixo]
+            
+            # Tenta com 4 dígitos
+            if len(prefixo) >= 4:
+                prefixo_4 = prefixo[:4]
+                for chave, valor in self.base_ceps.items():
+                    if chave.startswith(prefixo_4):
+                        self.cache_ceps[cep_limpo] = valor
+                        print(f"✅ CEP {cep_limpo} encontrado por prefixo 4: {valor}")
+                        return valor
+            
+            # Tenta com 3 dígitos
+            if len(prefixo) >= 3:
+                prefixo_3 = prefixo[:3] + "000"
+                if prefixo_3 in self.base_ceps:
+                    self.cache_ceps[cep_limpo] = self.base_ceps[prefixo_3]
+                    print(f"✅ CEP {cep_limpo} encontrado por prefixo 3: {self.base_ceps[prefixo_3]}")
+                    return self.base_ceps[prefixo_3]
+            
+            # Tenta com 2 dígitos
+            if len(prefixo) >= 2:
+                prefixo_2 = prefixo[:2] + "0000"
+                if prefixo_2 in self.base_ceps:
+                    self.cache_ceps[cep_limpo] = self.base_ceps[prefixo_2]
+                    print(f"✅ CEP {cep_limpo} encontrado por prefixo 2: {self.base_ceps[prefixo_2]}")
+                    return self.base_ceps[prefixo_2]
         
-        # Se não encontrou, tenta buscar por faixa de CEP
-        # Exemplo: CEPs começando com 01xxx são SP Capital
-        if cep_limpo.startswith("01"):
-            return {"cidade": "São Paulo", "uf": "SP", "tipo_tarifa": "CAPITAL 1", "prazo": 1}
+        # Se não encontrou, classifica por primeiro dígito
+        resultado = self._classificar_por_primeiro_digito(cep_limpo)
+        self.cache_ceps[cep_limpo] = resultado
+        print(f"⚠️ CEP {cep_limpo} não encontrado. Usando fallback: {resultado}")
+        return resultado
+    
+    def _classificar_por_primeiro_digito(self, cep):
+        """
+        Classifica o CEP pelo primeiro dígito (fallback)
+        """
+        if not cep:
+            return {"cidade": "São Paulo", "uf": "SP", "tipo_tarifa": "CAPITAL 1", "prazo": 1, "seguro": 0.0066}
         
-        # Para CEPs não encontrados, retorna um padrão com base no primeiro dígito
-        primeiro_digito = cep_limpo[0] if cep_limpo else "0"
+        primeiro_digito = cep[0]
         
-        # Mapeamento simples por região
+        # Mapeamento por região (baseado no padrão dos Correios)
         regioes = {
-            "0": {"cidade": "São Paulo", "uf": "SP", "tipo_tarifa": "CAPITAL 1", "prazo": 1},
-            "1": {"cidade": "São Paulo", "uf": "SP", "tipo_tarifa": "CAPITAL 1", "prazo": 1},
-            "2": {"cidade": "Rio de Janeiro", "uf": "RJ", "tipo_tarifa": "CAPITAL 1", "prazo": 2},
-            "3": {"cidade": "Belo Horizonte", "uf": "MG", "tipo_tarifa": "CAPITAL 1", "prazo": 2},
-            "4": {"cidade": "Salvador", "uf": "BA", "tipo_tarifa": "CAPITAL 1", "prazo": 3},
-            "5": {"cidade": "Recife", "uf": "PE", "tipo_tarifa": "CAPITAL 1", "prazo": 3},
-            "6": {"cidade": "Fortaleza", "uf": "CE", "tipo_tarifa": "CAPITAL 1", "prazo": 3},
-            "7": {"cidade": "Brasília", "uf": "DF", "tipo_tarifa": "CAPITAL 1", "prazo": 2},
-            "8": {"cidade": "Curitiba", "uf": "PR", "tipo_tarifa": "CAPITAL 1", "prazo": 2},
-            "9": {"cidade": "Porto Alegre", "uf": "RS", "tipo_tarifa": "CAPITAL 1", "prazo": 2}
+            "0": {"cidade": "São Paulo", "uf": "SP", "tipo_tarifa": "CAPITAL 1", "prazo": 1, "seguro": 0.0066},
+            "1": {"cidade": "São Paulo", "uf": "SP", "tipo_tarifa": "CAPITAL 1", "prazo": 1, "seguro": 0.0066},
+            "2": {"cidade": "Rio de Janeiro", "uf": "RJ", "tipo_tarifa": "CAPITAL 1", "prazo": 2, "seguro": 0.0066},
+            "3": {"cidade": "Belo Horizonte", "uf": "MG", "tipo_tarifa": "CAPITAL 1", "prazo": 2, "seguro": 0.0066},
+            "4": {"cidade": "Salvador", "uf": "BA", "tipo_tarifa": "CAPITAL 1", "prazo": 3, "seguro": 0.0066},
+            "5": {"cidade": "Recife", "uf": "PE", "tipo_tarifa": "CAPITAL 1", "prazo": 3, "seguro": 0.0066},
+            "6": {"cidade": "Fortaleza", "uf": "CE", "tipo_tarifa": "CAPITAL 1", "prazo": 3, "seguro": 0.0066},
+            "7": {"cidade": "Brasília", "uf": "DF", "tipo_tarifa": "CAPITAL 1", "prazo": 2, "seguro": 0.0066},
+            "8": {"cidade": "Curitiba", "uf": "PR", "tipo_tarifa": "CAPITAL 1", "prazo": 2, "seguro": 0.0066},
+            "9": {"cidade": "Porto Alegre", "uf": "RS", "tipo_tarifa": "CAPITAL 1", "prazo": 2, "seguro": 0.0066}
         }
         
-        return regioes.get(primeiro_digito, {"cidade": "Desconhecida", "uf": "SP", "tipo_tarifa": "CAPITAL 1", "prazo": 5})
+        return regioes.get(primeiro_digito, {"cidade": "Desconhecida", "uf": "SP", "tipo_tarifa": "CAPITAL 1", "prazo": 5, "seguro": 0.0066})
     
     def calcular_frete(self, uf, tipo_tarifa, peso, modalidade="PACKAGE"):
         """
