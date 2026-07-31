@@ -1,7 +1,7 @@
 # ==================== TABELA DE PREÇOS ====================
 class TabelaPrecos:
     def __init__(self):
-        # 1. PREÇOS DO FLYER (CAPITAIS) - usado apenas para calcular lucro
+        # 1. PREÇOS DO FLYER (CAPITAIS) - usado apenas para SP Capital
         self.precos_capital = {
             1: 24.99,
             5: 49.99,
@@ -10,8 +10,7 @@ class TabelaPrecos:
             30: 229.99
         }
         
-        # 2. TABELA DE LUCROS POR PESO (para INTERIOR)
-        # Estes são os lucros que o cliente quer ganhar em cima do GLM
+        # 2. TABELA DE LUCROS POR PESO (para INTERIOR e outras capitais)
         self.lucros_interior = {
             "INTERIOR 1": {
                 1: 10.23, 5: 15.74, 10: 27.04, 20: 46.10, 30: 75.24,
@@ -24,6 +23,21 @@ class TabelaPrecos:
                 80: 180.00, 90: 190.00, 100: 200.00
             },
             "INTERIOR 3": {
+                1: 10.23, 5: 15.74, 10: 27.04, 20: 46.10, 30: 75.24,
+                40: 130.00, 50: 140.00, 60: 150.00, 70: 160.00,
+                80: 180.00, 90: 190.00, 100: 200.00
+            },
+            "CAPITAL 1": {
+                1: 10.23, 5: 15.74, 10: 27.04, 20: 46.10, 30: 75.24,
+                40: 130.00, 50: 140.00, 60: 150.00, 70: 160.00,
+                80: 180.00, 90: 190.00, 100: 200.00
+            },
+            "CAPITAL 2": {
+                1: 10.23, 5: 15.74, 10: 27.04, 20: 46.10, 30: 75.24,
+                40: 130.00, 50: 140.00, 60: 150.00, 70: 160.00,
+                80: 180.00, 90: 190.00, 100: 200.00
+            },
+            "CAPITAL 3": {
                 1: 10.23, 5: 15.74, 10: 27.04, 20: 46.10, 30: 75.24,
                 40: 130.00, 50: 140.00, 60: 150.00, 70: 160.00,
                 80: 180.00, 90: 190.00, 100: 200.00
@@ -43,7 +57,7 @@ class TabelaPrecos:
             "SP": "INTERIOR 2", "SE": "INTERIOR 1", "TO": "INTERIOR 1"
         }
         
-        # 4. CUSTO GLM POR UF (para CAPITAL)
+        # 4. CUSTO GLM POR UF (para CAPITAL - usado apenas no cálculo de lucro)
         self.custo_glm_capital = {
             "AC": 14.76, "AL": 12.97, "AP": 19.65, "AM": 20.01,
             "BA": 12.60, "CE": 14.40, "DF": 11.08, "ES": 11.08,
@@ -55,7 +69,6 @@ class TabelaPrecos:
         }
         
         # 5. TABELA GLM COMPLETA POR UF E TIPO (para INTERIOR)
-        # Valores extraídos da planilha GLM Pack e .Com LIEV.xlsx
         self.glm_interior = {
             "AC": {
                 "INTERIOR 1": {1: 88.14, 5: 90.78, 10: 98.97, 20: 130.12, 30: 154.99},
@@ -233,7 +246,7 @@ class TabelaPrecos:
             "MG": 1.08, "PA": 2.67, "PB": 3.81, "PR": 1.08,
             "PE": 3.14, "PI": 2.67, "RJ": 1.08, "RN": 4.24,
             "RS": 1.68, "RO": 4.24, "RR": 4.24, "SC": 1.08,
-            "SP": 0.91, "SE": 2.48, "TO": 2.67
+            "SP": 5.80, "SE": 2.48, "TO": 2.67
         }
         
         # 8. KG ADICIONAL PARA INTERIOR (acima de 30kg)
@@ -276,19 +289,15 @@ class TabelaPrecos:
         Interpola linearmente o valor para um peso específico.
         Se o peso for maior que 30kg, usa o kg_adicional para extrapolar.
         """
-        # Se o peso é menor que o menor peso da tabela
         if peso <= pesos_disponiveis[0]:
             return tabela[pesos_disponiveis[0]]
         
-        # Se o peso é maior que o maior peso da tabela (30kg)
         if peso >= pesos_disponiveis[-1]:
             if kg_adicional is not None:
-                # Extrapolação com kg adicional
                 valor_base = tabela[pesos_disponiveis[-1]]
                 return round(valor_base + (peso - pesos_disponiveis[-1]) * kg_adicional, 2)
             return tabela[pesos_disponiveis[-1]]
         
-        # Interpolação linear para pesos entre os disponíveis
         for i in range(len(pesos_disponiveis) - 1):
             if pesos_disponiveis[i] <= peso <= pesos_disponiveis[i + 1]:
                 peso_baixo = pesos_disponiveis[i]
@@ -296,7 +305,6 @@ class TabelaPrecos:
                 valor_baixo = tabela[peso_baixo]
                 valor_alto = tabela[peso_alto]
                 
-                # Interpolação linear
                 proporcao = (peso - peso_baixo) / (peso_alto - peso_baixo)
                 valor = valor_baixo + (valor_alto - valor_baixo) * proporcao
                 
@@ -308,15 +316,20 @@ class TabelaPrecos:
         """
         Interpola o lucro para um peso específico
         """
+        # Para CAPITAL (exceto SP Capital), usa a tabela de lucros
         if tipo_tarifa.startswith("CAPITAL"):
-            # Para CAPITAL, o lucro é baseado no flyer
-            if uf in self.custo_glm_capital:
-                # Busca o GLM para o peso
+            # Usa a tabela de lucros para capitais (mesma do interior)
+            if tipo_tarifa in self.lucros_interior:
+                tabela_lucro = self.lucros_interior[tipo_tarifa]
+                pesos_disponiveis = sorted(tabela_lucro.keys())
+                return self._interpolar_valor(tabela_lucro, peso, pesos_disponiveis)
+            
+            # Para SP Capital, usa o Flyer (promoção especial)
+            if uf == "SP" and tipo_tarifa == "CAPITAL 1":
                 glm = self._buscar_glm(uf, tipo_tarifa, peso)
                 if glm is None:
                     return None
                 
-                # Busca o preço do flyer
                 frete_flyer = None
                 for peso_limite in sorted(self.precos_capital.keys()):
                     if peso <= peso_limite:
@@ -330,7 +343,6 @@ class TabelaPrecos:
                 if frete_flyer is None:
                     return None
                 
-                # Lucro = Flyer - GLM
                 lucro = frete_flyer - glm
                 return round(lucro, 2)
             
@@ -364,7 +376,6 @@ class TabelaPrecos:
                 tabela = self.glm_interior[uf][tipo_tarifa]
                 pesos_disponiveis = sorted(tabela.keys())
                 
-                # Busca o kg_adicional para extrapolação acima de 30kg
                 kg_adicional = None
                 if uf in self.kg_adicional_interior and tipo_tarifa in self.kg_adicional_interior[uf]:
                     kg_adicional = self.kg_adicional_interior[uf][tipo_tarifa]
@@ -377,11 +388,6 @@ class TabelaPrecos:
     def calcular_frete(self, uf, tipo_tarifa, peso):
         """
         Calcula o frete usando GLM + Lucro para TODOS os destinos
-        
-        Args:
-            uf: Estado (ex: "SP", "AC")
-            tipo_tarifa: "CAPITAL 1", "INTERIOR 1", "INTERIOR 2", "INTERIOR 3"
-            peso: Peso em kg
         """
         
         # 1. Busca o GLM para o UF e tipo de tarifa
