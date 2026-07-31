@@ -142,7 +142,7 @@ async def consulta():
                         <li class="nav-item"><a class="nav-link active" href="/consulta">Consulta</a></li>
                         <li class="nav-item" id="loginButton">
                             <button class="btn btn-outline-light btn-sm ms-2" onclick="abrirLogin()">
-                                <i class="bi bi-box-arrow-in-right me-1"></i> Funcionário
+                                <i class="bi bi-box-arrow-in-right me-1"></i> Login
                             </button>
                         </li>
                         <li class="nav-item" id="logoutButton" style="display:none;">
