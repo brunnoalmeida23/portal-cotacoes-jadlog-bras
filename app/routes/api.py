@@ -9,7 +9,7 @@ from datetime import datetime
 from app.supabase_client import (
     salvar_cotacao, buscar_cotacao_por_numero, gerar_numero_cotacao,
     buscar_cliente_por_cpf, salvar_cliente, atualizar_cliente,
-    buscar_cotacoes_por_cliente
+    buscar_cotacoes_por_cliente, buscar_cotacoes_por_nome
 )
 from app.frete_calculator import FreteCalculator
 from cupom_pdf import CupomPDF
@@ -120,7 +120,13 @@ async def calcular_frete_endpoint(
     if valor_base is None:
         return JSONResponse({"success": False, "message": f"Tarifa não encontrada para {info_cep['cidade']}/{uf} - {tipo_tarifa}"})
     
-    seguro = round(valor_nf * SEGURO_PERCENT, 2)
+    # ===== SEGURO (Advalorem) =====
+    # Regra: cobrar 0,66% do valor da NF apenas se NF > 100 OU frete > 100
+    if valor_nf > 100 or valor_base > 100:
+        seguro = round(valor_nf * SEGURO_PERCENT, 2)
+    else:
+        seguro = 0.00
+    
     total = round(valor_base + seguro, 2)
     numero_cotacao = gerar_numero_cotacao()
     
@@ -163,7 +169,7 @@ async def calcular_frete_endpoint(
 
 # ===== ROTA PARA BUSCAR COTAÇÃO =====
 @router.get("/api/buscar-cotacao")
-async def api_buscar_cotacao(numero: str = None, documento: str = None):
+async def api_buscar_cotacao(numero: str = None, documento: str = None, nome: str = None):
     if numero:
         resultado = buscar_cotacao_por_numero(numero)
         if resultado:
@@ -174,6 +180,11 @@ async def api_buscar_cotacao(numero: str = None, documento: str = None):
         if resultado:
             return JSONResponse({"success": True, "dados": resultado})
         return JSONResponse({"success": False, "message": "Nenhuma cotação encontrada para este cliente"})
+    elif nome:
+        resultado = buscar_cotacoes_por_nome(nome)
+        if resultado:
+            return JSONResponse({"success": True, "dados": resultado})
+        return JSONResponse({"success": False, "message": "Nenhuma cotação encontrada para este nome"})
     return JSONResponse({"success": False, "message": "Parâmetro de busca não informado"})
 
 # ===== ROTA PARA RECIBO (PDF) =====
