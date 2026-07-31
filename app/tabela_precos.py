@@ -238,15 +238,15 @@ class TabelaPrecos:
             "TO": {1: 12.72, 5: 26.48, 10: 37.43, 20: 69.84, 30: 101.83}
         }
         
-        # 7. KG ADICIONAL PARA CAPITAL (acima de 30kg)
+        # 7. KG ADICIONAL PARA CAPITAL (acima de 30kg) - CORRIGIDO
         self.kg_adicional_capital = {
             "AC": 4.24, "AL": 2.48, "AP": 4.24, "AM": 4.24,
             "BA": 2.02, "CE": 3.99, "DF": 1.68, "ES": 1.68,
             "GO": 1.68, "MA": 2.67, "MT": 2.74, "MS": 2.22,
             "MG": 1.08, "PA": 2.67, "PB": 3.81, "PR": 1.08,
-            "PE": 3.14, "PI": 2.67, "RJ": 1.08, "RN": 4.24,
-            "RS": 1.68, "RO": 4.24, "RR": 4.24, "SC": 1.08,
-            "SP": 5.80, "SE": 2.48, "TO": 2.67
+            "PE": 3.14, "PI": 2.67, "RJ": 6.96,  # ✅ CORRIGIDO!
+            "RN": 4.24, "RS": 1.68, "RO": 4.24, "RR": 4.24,
+            "SC": 1.08, "SP": 5.80, "SE": 2.48, "TO": 2.67
         }
         
         # 8. KG ADICIONAL PARA INTERIOR (acima de 30kg)
