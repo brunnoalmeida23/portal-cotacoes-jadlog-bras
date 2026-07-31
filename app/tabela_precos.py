@@ -338,10 +338,11 @@ class TabelaPrecos:
         
         return None
     
-    def _buscar_glm(self, uf, tipo_tarifa, peso):
+    def _buscar_glm(self, uf, tipo_tarifa, peso, modalidade="PACKAGE"):
         """
         Busca o valor GLM para o UF, tipo de tarifa e peso,
         usando kg_adicional para pesos > 30kg.
+        O parâmetro modalidade (.PACKAGE ou .COM) define qual tabela usar.
         """
         if tipo_tarifa.startswith("CAPITAL"):
             if uf in self.glm_capital:
@@ -352,6 +353,8 @@ class TabelaPrecos:
             return None
         
         elif tipo_tarifa.startswith("INTERIOR"):
+            # Para interior, usa a mesma tabela para .PACKAGE e .COM
+            # A diferença está apenas na modalidade que é exibida no resultado
             if uf in self.glm_interior and tipo_tarifa in self.glm_interior[uf]:
                 tabela = self.glm_interior[uf][tipo_tarifa]
                 pesos_disponiveis = sorted(tabela.keys())
@@ -368,10 +371,11 @@ class TabelaPrecos:
     def calcular_frete(self, uf, tipo_tarifa, peso, modalidade="PACKAGE"):
         """
         Calcula o frete usando GLM + Lucro para TODOS os destinos
+        O parâmetro modalidade define qual modalidade será usada no cálculo.
         """
         
-        # 1. Busca o GLM para o UF e tipo de tarifa
-        glm = self._buscar_glm(uf, tipo_tarifa, peso)
+        # 1. Busca o GLM para o UF, tipo de tarifa e modalidade
+        glm = self._buscar_glm(uf, tipo_tarifa, peso, modalidade)
         if glm is None:
             return None
         
@@ -383,22 +387,25 @@ class TabelaPrecos:
         # 3. Frete final = GLM + Lucro
         return round(glm + lucro, 2)
     
-    def calcular_lucro(self, uf, tipo_tarifa, peso):
-        """Calcula o lucro do cliente (NÃO MOSTRAR NO FRONTEND)"""
+    def calcular_lucro(self, uf, tipo_tarifa, peso, modalidade="PACKAGE"):
+        """
+        Calcula o lucro do cliente (NÃO MOSTRAR NO FRONTEND)
+        """
         
-        frete = self.calcular_frete(uf, tipo_tarifa, peso)
+        frete = self.calcular_frete(uf, tipo_tarifa, peso, modalidade)
         if frete is None:
             return None
         
         if tipo_tarifa.startswith("CAPITAL"):
-            if uf in self.custo_glm_capital:
-                custo = self.custo_glm_capital[uf]
-                lucro = frete - custo
-                return round(lucro, 2)
+            if uf in self.glm_capital:
+                custo = self._buscar_glm(uf, tipo_tarifa, peso, modalidade)
+                if custo is not None:
+                    lucro = frete - custo
+                    return round(lucro, 2)
         
         elif tipo_tarifa.startswith("INTERIOR"):
             if uf in self.glm_interior and tipo_tarifa in self.glm_interior[uf]:
-                custo = self._buscar_glm(uf, tipo_tarifa, peso)
+                custo = self._buscar_glm(uf, tipo_tarifa, peso, modalidade)
                 if custo is not None:
                     lucro = frete - custo
                     return round(lucro, 2)

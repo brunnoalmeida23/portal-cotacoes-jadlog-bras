@@ -123,10 +123,8 @@ async def calcular_frete_endpoint(
         return JSONResponse({"success": False, "message": f"Tarifa não encontrada para {info_cep['cidade']}/{uf} - {tipo_tarifa}"})
     
     # ===== SEGURO (Advalorem) =====
-    if valor_nf > 100 or valor_base > 100:
-        seguro = round(valor_nf * SEGURO_PERCENT, 2)
-    else:
-        seguro = 0.00
+    # O seguro é calculado sobre o valor da NF, independente da modalidade
+    seguro = round(valor_nf * SEGURO_PERCENT, 2)
     
     total = round(valor_base + seguro, 2)
     numero_cotacao = gerar_numero_cotacao()
