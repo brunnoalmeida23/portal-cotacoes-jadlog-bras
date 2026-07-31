@@ -153,9 +153,6 @@ class TabelaPrecos:
             "SC": 1.08, "SP": 5.80, "SE": 2.48, "TO": 2.67
         }
         
-        # ===== ADVALOREM =====
-        self.ADVALOREM_PERCENT = 0.0066  # 0,66%
-        
         # ===== MAPEAMENTO UF -> TIPO =====
         self.tipo_por_uf = {
             "AC": "INTERIOR 1", "AL": "INTERIOR 1", "AP": "INTERIOR 1", 
@@ -209,31 +206,23 @@ class TabelaPrecos:
     
     def calcular_frete(self, uf, tipo_tarifa, peso, modalidade="PACKAGE"):
         """
-        Calcula o frete: Subtotal + Advalorem
-        Fórmula: = Subtotal + (Subtotal * 0.0066)
+        Calcula o subtotal (GLM + Comissão)
+        O Advalorem será calculado no api.py sobre o valor da NF
         """
-        # 1. Busca o Subtotal (GLM + Comissão) interpolado
+        # Busca o Subtotal (GLM + Comissão) interpolado
         subtotal = self._interpolar_subtotal(uf, peso)
         if subtotal is None:
             return None
         
-        # 2. Advalorem (0,66% sobre o subtotal)
-        advalorem = round(subtotal * self.ADVALOREM_PERCENT, 2)
-        
-        # 3. Total = Subtotal + Advalorem
-        total = round(subtotal + advalorem, 2)
-        
         return {
-            'subtotal': round(subtotal, 2),
-            'advalorem': advalorem,
-            'total': total
+            'subtotal': round(subtotal, 2)
         }
     
     def calcular_frete_total(self, uf, tipo_tarifa, peso, modalidade="PACKAGE"):
         """
-        Retorna apenas o total (para compatibilidade com o código antigo)
+        Retorna apenas o subtotal (para compatibilidade)
         """
         resultado = self.calcular_frete(uf, tipo_tarifa, peso, modalidade)
         if resultado:
-            return resultado['total']
+            return resultado['subtotal']
         return None
