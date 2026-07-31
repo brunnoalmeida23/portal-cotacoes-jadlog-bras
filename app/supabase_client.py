@@ -144,14 +144,61 @@ def buscar_cotacoes_por_cliente(cpf_cnpj):
         return []
 
 def buscar_cotacoes_por_nome(nome):
-    """Busca cotações pelo nome do cliente (busca parcial)"""
+    """
+    Busca cotações pelo nome do cliente (busca parcial com tratamento de caracteres)
+    """
     if not supabase:
+        print("⚠️ Supabase não configurado")
         return []
+    
+    if not nome or len(nome.strip()) < 2:
+        print("⚠️ Nome muito curto para busca (mínimo 2 caracteres)")
+        return []
+    
     try:
-        response = supabase.table("cotacoes").select("*").ilike("cliente_nome", f"%{nome}%").order("data_criacao", desc=True).execute()
-        return response.data
+        # Limpa o nome para busca (remove espaços extras)
+        nome_limpo = nome.strip()
+        print(f"🔍 Buscando cotações por nome: '{nome_limpo}'")
+        
+        # Busca usando ilike (case insensitive)
+        response = supabase.table("cotacoes")\
+            .select("*")\
+            .ilike("cliente_nome", f"%{nome_limpo}%")\
+            .order("data_criacao", desc=True)\
+            .execute()
+        
+        if response.data and len(response.data) > 0:
+            print(f"✅ Encontradas {len(response.data)} cotações para o nome: '{nome_limpo}'")
+            return response.data
+        
+        # Se não encontrou, tenta buscar com o nome normalizado (sem acentos)
+        try:
+            import unicodedata
+            nome_normalizado = ''.join(
+                c for c in unicodedata.normalize('NFD', nome_limpo)
+                if unicodedata.category(c) != 'Mn'
+            )
+            
+            if nome_normalizado != nome_limpo:
+                print(f"🔍 Tentando busca com nome normalizado: '{nome_normalizado}'")
+                response = supabase.table("cotacoes")\
+                    .select("*")\
+                    .ilike("cliente_nome", f"%{nome_normalizado}%")\
+                    .order("data_criacao", desc=True)\
+                    .execute()
+                
+                if response.data and len(response.data) > 0:
+                    print(f"✅ Encontradas {len(response.data)} cotações para o nome normalizado: '{nome_normalizado}'")
+                    return response.data
+        except ImportError:
+            pass
+        
+        print(f"ℹ️ Nenhuma cotação encontrada para o nome: '{nome_limpo}'")
+        return []
     except Exception as e:
         print(f"❌ Erro ao buscar cotações por nome: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return []
 
 # ==================== GERAR NÚMERO DE COTAÇÃO ====================
