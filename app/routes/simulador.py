@@ -106,6 +106,26 @@ async def simulador():
             .modal-header .btn-close {
                 filter: brightness(0) invert(1);
             }
+            .modalidade-btn {
+                padding: 8px 16px;
+                border-radius: 8px;
+                border: 2px solid #dee2e6;
+                background: white;
+                cursor: pointer;
+                transition: all 0.2s;
+                font-weight: 600;
+            }
+            .modalidade-btn:hover {
+                border-color: #E31E24;
+            }
+            .modalidade-btn.active {
+                border-color: #E31E24;
+                background: #E31E24;
+                color: white;
+            }
+            .modalidade-btn.active:hover {
+                background: #B81217;
+            }
         </style>
     </head>
     <body>
@@ -305,8 +325,26 @@ async def simulador():
                             </div>
                         </div>
                         
+                        <!-- ===== MODALIDADE ===== -->
+                        <div class="mb-3">
+                            <label class="fw-bold">
+                                <i class="bi bi-box-seam me-1"></i>
+                                Modalidade
+                            </label>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="modalidade-btn active" id="btnPackage" onclick="selecionarModalidade('PACKAGE')">
+                                    .PACKAGE
+                                </button>
+                                <button type="button" class="modalidade-btn" id="btnCom" onclick="selecionarModalidade('COM')">
+                                    .COM
+                                </button>
+                            </div>
+                            <small class="text-muted">Selecione a modalidade desejada para o frete</small>
+                        </div>
+                        
                         <form id="formSimulador">
                             <input type="hidden" id="clienteDocumento" value="">
+                            <input type="hidden" id="modalidadeSelecionada" value="PACKAGE">
                             <div class="mb-3">
                                 <label class="fw-bold">
                                     <i class="bi bi-geo-alt me-1"></i>
@@ -474,6 +512,21 @@ async def simulador():
 
         <script>
         const ts = Date.now();
+        
+        // ===== MODALIDADE =====
+        function selecionarModalidade(modalidade) {
+            document.getElementById('modalidadeSelecionada').value = modalidade;
+            
+            // Atualizar visual dos botões
+            document.getElementById('btnPackage').classList.remove('active');
+            document.getElementById('btnCom').classList.remove('active');
+            
+            if (modalidade === 'PACKAGE') {
+                document.getElementById('btnPackage').classList.add('active');
+            } else {
+                document.getElementById('btnCom').classList.add('active');
+            }
+        }
 
         // ===== SISTEMA DE LOGIN COM localStorage =====
         const SENHA_FUNCIONARIO = 'jadlog2026';
@@ -486,7 +539,6 @@ async def simulador():
                     const data = JSON.parse(loginData);
                     const agora = new Date().getTime();
                     if (agora < data.expiracao) {
-                        // Sessão ainda válida
                         document.getElementById('loginButton').style.display = 'none';
                         document.getElementById('logoutButton').style.display = 'block';
                         document.getElementById('btnImprimirRecibo').style.display = 'block';
@@ -512,7 +564,6 @@ async def simulador():
             const senha = document.getElementById('senhaLogin').value;
             
             if (senha === SENHA_FUNCIONARIO) {
-                // Salvar sessão no localStorage com expiração
                 const agora = new Date().getTime();
                 const expiracao = agora + (VALIDADE_LOGIN_HORAS * 60 * 60 * 1000);
                 localStorage.setItem('loginData', JSON.stringify({
@@ -554,7 +605,6 @@ async def simulador():
             document.getElementById('senhaLogin').value = '';
         });
 
-        // Verificar sessão ao carregar a página
         window.addEventListener('load', function() {
             verificarSessao();
         });
@@ -714,10 +764,14 @@ async def simulador():
             const btn = document.getElementById('btnCalcular');
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Calculando...';
+            
+            const modalidade = document.getElementById('modalidadeSelecionada').value;
+            
             const dados = new URLSearchParams({
                 cep_destino: document.getElementById('cepDestino').value,
                 peso: document.getElementById('peso').value,
                 valor_nf: document.getElementById('valorNF').value,
+                modalidade: modalidade,
                 cliente_nome: document.getElementById('clienteNome').value || 'Cliente não informado',
                 cliente_documento: document.getElementById('clienteDocumento').value || ''
             });
@@ -869,7 +923,6 @@ async def simulador():
                 return;
             }
             
-            // Verifica se o usuário está logado via localStorage
             const loginData = localStorage.getItem('loginData');
             if (!loginData) {
                 alert('🔒 Apenas funcionários logados podem imprimir recibos. Faça login no botão "Login".');
@@ -913,7 +966,6 @@ async def simulador():
             document.getElementById('senhaImpressao').value = '';
         });
 
-        // ===== DUPLO CLIQUE NO NÚMERO DA COTAÇÃO =====
         document.getElementById('numeroCotacao').addEventListener('dblclick', function() {
             const loginData = localStorage.getItem('loginData');
             if (loginData) {

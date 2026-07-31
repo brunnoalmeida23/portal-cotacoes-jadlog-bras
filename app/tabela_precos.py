@@ -57,18 +57,7 @@ class TabelaPrecos:
             "SP": "INTERIOR 2", "SE": "INTERIOR 1", "TO": "INTERIOR 1"
         }
         
-        # 4. CUSTO GLM POR UF (para CAPITAL - usado apenas no cálculo de lucro)
-        self.custo_glm_capital = {
-            "AC": 14.76, "AL": 12.97, "AP": 19.65, "AM": 20.01,
-            "BA": 12.60, "CE": 14.40, "DF": 11.08, "ES": 11.08,
-            "GO": 11.08, "MA": 12.72, "MT": 12.25, "MS": 13.09,
-            "MG": 12.77, "PA": 12.72, "PB": 13.58, "PR": 11.25,
-            "PE": 14.54, "PI": 13.09, "RJ": 11.25, "RN": 13.58,
-            "RS": 11.70, "RO": 16.92, "RR": 19.65, "SC": 11.25,
-            "SP": 12.66, "SE": 12.60, "TO": 12.72
-        }
-        
-        # 5. TABELA GLM COMPLETA POR UF E TIPO (para INTERIOR)
+        # 4. TABELA GLM COMPLETA POR UF E TIPO (para INTERIOR - PACKAGE)
         self.glm_interior = {
             "AC": {
                 "INTERIOR 1": {1: 88.14, 5: 90.78, 10: 98.97, 20: 130.12, 30: 154.99},
@@ -207,7 +196,7 @@ class TabelaPrecos:
             }
         }
         
-        # 6. TABELA GLM COMPLETA PARA CAPITAL (valores por peso)
+        # 5. TABELA GLM COMPLETA PARA CAPITAL (valores por peso)
         self.glm_capital = {
             "AC": {1: 14.76, 5: 34.25, 10: 52.95, 20: 103.89, 30: 154.75},
             "AL": {1: 12.97, 5: 26.10, 10: 36.22, 20: 66.71, 30: 96.70},
@@ -238,18 +227,18 @@ class TabelaPrecos:
             "TO": {1: 12.72, 5: 26.48, 10: 37.43, 20: 69.84, 30: 101.83}
         }
         
-        # 7. KG ADICIONAL PARA CAPITAL (acima de 30kg) - CORRIGIDO
+        # 6. KG ADICIONAL PARA CAPITAL (acima de 30kg)
         self.kg_adicional_capital = {
             "AC": 4.24, "AL": 2.48, "AP": 4.24, "AM": 4.24,
             "BA": 2.02, "CE": 3.99, "DF": 1.68, "ES": 1.68,
             "GO": 1.68, "MA": 2.67, "MT": 2.74, "MS": 2.22,
             "MG": 1.08, "PA": 2.67, "PB": 3.81, "PR": 1.08,
-            "PE": 3.14, "PI": 2.67, "RJ": 6.96,  # ✅ CORRIGIDO!
+            "PE": 3.14, "PI": 2.67, "RJ": 6.96,
             "RN": 4.24, "RS": 1.68, "RO": 4.24, "RR": 4.24,
             "SC": 1.08, "SP": 5.80, "SE": 2.48, "TO": 2.67
         }
         
-        # 8. KG ADICIONAL PARA INTERIOR (acima de 30kg)
+        # 7. KG ADICIONAL PARA INTERIOR (acima de 30kg)
         self.kg_adicional_interior = {
             "AC": {"INTERIOR 1": 29.57, "INTERIOR 2": 39.33, "INTERIOR 3": 59.89},
             "AL": {"INTERIOR 1": 25.24, "INTERIOR 2": 33.58, "INTERIOR 3": 51.13},
@@ -376,7 +365,7 @@ class TabelaPrecos:
         
         return None
     
-    def calcular_frete(self, uf, tipo_tarifa, peso):
+    def calcular_frete(self, uf, tipo_tarifa, peso, modalidade="PACKAGE"):
         """
         Calcula o frete usando GLM + Lucro para TODOS os destinos
         """

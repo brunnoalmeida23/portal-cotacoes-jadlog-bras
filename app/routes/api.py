@@ -104,6 +104,7 @@ async def calcular_frete_endpoint(
     cep_destino: str = Form(...),
     peso: float = Form(...),
     valor_nf: float = Form(...),
+    modalidade: str = Form("PACKAGE"),
     cliente_nome: str = Form(""),
     cliente_documento: str = Form("")
 ):
@@ -114,14 +115,14 @@ async def calcular_frete_endpoint(
     
     uf = info_cep["uf"]
     tipo_tarifa = info_cep["tipo_tarifa"]
-    modalidade = info_cep.get("modalidade", "PACKAGE")
-    valor_base = calculator.calcular_frete(uf, tipo_tarifa, peso)
+    
+    # Calcula o frete com a modalidade selecionada
+    valor_base = calculator.calcular_frete(uf, tipo_tarifa, peso, modalidade)
     
     if valor_base is None:
         return JSONResponse({"success": False, "message": f"Tarifa não encontrada para {info_cep['cidade']}/{uf} - {tipo_tarifa}"})
     
     # ===== SEGURO (Advalorem) =====
-    # Regra: cobrar 0,66% do valor da NF apenas se NF > 100 OU frete > 100
     if valor_nf > 100 or valor_base > 100:
         seguro = round(valor_nf * SEGURO_PERCENT, 2)
     else:
