@@ -315,46 +315,37 @@ class TabelaPrecos:
     def _interpolar_lucro(self, uf, tipo_tarifa, peso):
         """
         Interpola o lucro para um peso específico
+        SP Capital = Flyer
+        Todos os outros = Tabela de Lucros
         """
-        # Para CAPITAL (exceto SP Capital), usa a tabela de lucros
-        if tipo_tarifa.startswith("CAPITAL"):
-            # Usa a tabela de lucros para capitais (mesma do interior)
-            if tipo_tarifa in self.lucros_interior:
-                tabela_lucro = self.lucros_interior[tipo_tarifa]
-                pesos_disponiveis = sorted(tabela_lucro.keys())
-                return self._interpolar_valor(tabela_lucro, peso, pesos_disponiveis)
-            
-            # Para SP Capital, usa o Flyer (promoção especial)
-            if uf == "SP" and tipo_tarifa == "CAPITAL 1":
-                glm = self._buscar_glm(uf, tipo_tarifa, peso)
-                if glm is None:
-                    return None
-                
-                frete_flyer = None
-                for peso_limite in sorted(self.precos_capital.keys()):
-                    if peso <= peso_limite:
-                        frete_flyer = self.precos_capital[peso_limite]
-                        break
-                
-                if peso > 30:
-                    kg_adicional = self.kg_adicional_capital.get(uf, 5.00)
-                    frete_flyer = self.precos_capital[30] + (peso - 30) * kg_adicional
-                
-                if frete_flyer is None:
-                    return None
-                
-                lucro = frete_flyer - glm
-                return round(lucro, 2)
-            
-            return None
         
-        elif tipo_tarifa.startswith("INTERIOR"):
-            if tipo_tarifa in self.lucros_interior:
-                tabela_lucro = self.lucros_interior[tipo_tarifa]
-                pesos_disponiveis = sorted(tabela_lucro.keys())
-                return self._interpolar_valor(tabela_lucro, peso, pesos_disponiveis)
+        # ===== SP CAPITAL (Flyer) =====
+        if uf == "SP" and tipo_tarifa == "CAPITAL 1":
+            glm = self._buscar_glm(uf, tipo_tarifa, peso)
+            if glm is None:
+                return None
             
-            return None
+            frete_flyer = None
+            for peso_limite in sorted(self.precos_capital.keys()):
+                if peso <= peso_limite:
+                    frete_flyer = self.precos_capital[peso_limite]
+                    break
+            
+            if peso > 30:
+                kg_adicional = self.kg_adicional_capital.get(uf, 5.00)
+                frete_flyer = self.precos_capital[30] + (peso - 30) * kg_adicional
+            
+            if frete_flyer is None:
+                return None
+            
+            lucro = frete_flyer - glm
+            return round(lucro, 2)
+        
+        # ===== TODOS OS OUTROS DESTINOS =====
+        if tipo_tarifa in self.lucros_interior:
+            tabela_lucro = self.lucros_interior[tipo_tarifa]
+            pesos_disponiveis = sorted(tabela_lucro.keys())
+            return self._interpolar_valor(tabela_lucro, peso, pesos_disponiveis)
         
         return None
     
