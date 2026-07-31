@@ -1,45 +1,68 @@
-import json
 import re
+import json
+import os
+from app.tabela_precos import TabelaPrecos
 
 class FreteCalculator:
     def __init__(self):
-        # Carregar dados
-        with open("dados_glm.json", "r", encoding="utf-8") as f:
-            self.dados_glm = json.load(f)
-        
-        with open("dados_cidaten.json", "r", encoding="utf-8") as f:
-            self.dados_cidaten = json.load(f)
-        
-        # Mapear pesos para colunas
-        self.pesos = [
-            0.25, 0.50, 1.00, 2.00, 3.00, 4.00, 5.00, 6.00, 7.00, 8.00, 9.00,
-            10.00, 11.00, 12.00, 13.00, 14.00, 15.00, 16.00, 17.00, 18.00, 19.00,
-            20.00, 21.00, 22.00, 23.00, 24.00, 25.00, 26.00, 27.00, 28.00, 29.00, 30.00
+        self.dados_cidaten = []
+        possible_paths = [
+            "dados_cidaten.json",
+            os.path.join(os.path.dirname(__file__), "..", "dados_cidaten.json"),
+            os.path.join(os.path.dirname(__file__), "dados_cidaten.json")
         ]
+        for path in possible_paths:
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    self.dados_cidaten = json.load(f)
+                    print(f"✅ dados_cidaten.json carregado de: {path} ({len(self.dados_cidaten)} linhas)")
+                    break
+            except Exception as e:
+                continue
+        if not self.dados_cidaten:
+            print("⚠️ dados_cidaten.json NÃO encontrado!")
         
-        # Nomes das colunas de peso no JSON (ex: "0.2500", "1.0000")
-        self.colunas_peso = [f"{p:.4f}" for p in self.pesos]
+        # Carregar dados_glm.json
+        self.dados_glm = []
+        possible_paths_glm = [
+            "dados_glm.json",
+            os.path.join(os.path.dirname(__file__), "..", "dados_glm.json"),
+            os.path.join(os.path.dirname(__file__), "dados_glm.json")
+        ]
+        for path in possible_paths_glm:
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    self.dados_glm = json.load(f)
+                    print(f"✅ dados_glm.json carregado de: {path} ({len(self.dados_glm)} linhas)")
+                    break
+            except Exception as e:
+                continue
+        if not self.dados_glm:
+            print("⚠️ dados_glm.json NÃO encontrado!")
         
-        # Criar índice por UF e Tipo de Tarifa
-        self.glm_index = {}
-        for item in self.dados_glm:
-            uf = item.get("UF", "").strip().upper()
-            tipo = item.get("Tipo de Tarifa", "").strip()
-            if uf and tipo:
-                key = f"{uf}|{tipo}"
-                if key not in self.glm_index:
-                    self.glm_index[key] = []
-                self.glm_index[key].append(item)
+        self.tabela = TabelaPrecos()
     
     def buscar_cep(self, cep):
-        """Busca informações do CEP"""
-        # Limpar CEP
+        """Busca informações do CEP na base de dados"""
         cep_limpo = re.sub(r"\D", "", cep)
+        
         if len(cep_limpo) != 8:
             return None
         
         cep_num = int(cep_limpo)
         
+        # FALLBACK PARA SP CAPITAL (01000-000 a 05999-999)
+        if cep_limpo.startswith(("01", "02", "03")):
+            return {
+                "uf": "SP",
+                "cidade": "SAO PAULO",
+                "tipo_tarifa": "CAPITAL 1",
+                "prazo": "1",
+                "seguro": 0.0066,
+                "modalidade": "PACKAGE"
+            }
+        
+        # Busca nos dados do JSON
         for item in self.dados_cidaten:
             faixa = item.get("Cep", "")
             if faixa and " a " in faixa:
@@ -48,41 +71,36 @@ class FreteCalculator:
                     cep_ini = int(re.sub(r"\D", "", partes[0]))
                     cep_fim = int(re.sub(r"\D", "", partes[1]))
                     if cep_ini <= cep_num <= cep_fim:
+                        uf = item.get("UF", "").strip().upper()
+                        tipo = item.get("Tipo Tarifa", "").strip().upper()
+                        frap = item.get("Frap (Fob)", "").strip().upper()
+                        
+                        if tipo.startswith("INTERIOR"):
+                            if "1" in tipo:
+                                tipo_tarifa = "INTERIOR 1"
+                            elif "2" in tipo:
+                                tipo_tarifa = "INTERIOR 2"
+                            elif "3" in tipo:
+                                tipo_tarifa = "INTERIOR 3"
+                            else:
+                                tipo_tarifa = "INTERIOR 1"
+                        else:
+                            tipo_tarifa = "CAPITAL 1"
+                        
                         return {
-                            "uf": item.get("UF", "").strip(),
-                            "cidade": item.get("Localidade", "").strip(),
-                            "tipo_tarifa": item.get("Tipo Tarifa", "").strip(),
-                            "prazo": item.get("Prazo Rodo", ""),
-                            "seguro": float(item.get("% Seguro", 0.0066))
+                            "uf": uf,
+                            "cidade": item.get("Localidade", "").strip().upper(),
+                            "tipo_tarifa": tipo_tarifa,
+                            "prazo": item.get("Prazo Rodo", "1"),
+                            "seguro": float(item.get("% Seguro", 0.0066)),
+                            "modalidade": "PACKAGE"
                         }
                 except:
                     continue
+        
+        # Se não encontrou, retorna None
         return None
     
-    def calcular_frete(self, uf, tipo_tarifa, peso, modalidade="Package"):
-        """Calcula o frete baseado na UF, tipo de tarifa, peso e modalidade"""
-        
-        # Buscar na tabela GLM
-        key = f"{uf}|{tipo_tarifa}"
-        if key not in self.glm_index:
-            return None
-        
-        # Encontrar a linha correta
-        for item in self.glm_index[key]:
-            # Encontrar a coluna de peso correta
-            for i, coluna in enumerate(self.colunas_peso):
-                if peso <= self.pesos[i]:
-                    valor = item.get(coluna, 0)
-                    if valor and isinstance(valor, (int, float)):
-                        return float(valor)
-                    break
-        
-        # Se peso > 30kg, usar kg adicional
-        if peso > 30:
-            valor_base = item.get("30.0000", 0)
-            kg_adicional = item.get("Kg Adicional", 0)
-            if valor_base and kg_adicional:
-                extra = (peso - 30) * kg_adicional
-                return float(valor_base) + float(extra)
-        
-        return None
+    def calcular_frete(self, uf, tipo_tarifa, peso):
+        """Calcula o frete usando a tabela de preços"""
+        return self.tabela.calcular_frete(uf, tipo_tarifa, peso)
