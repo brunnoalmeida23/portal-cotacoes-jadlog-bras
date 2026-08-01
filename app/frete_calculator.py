@@ -8,7 +8,7 @@ try:
     print(f"✅ Base de CEPs carregada: {len(CEPS_DATABASE)} registros")
 except ImportError:
     print("⚠️ Arquivo ceps_data.py não encontrado. Usando base de fallback.")
-    # Base de fallback (mínima) - APENAS PARA TESTE
+    # Base de fallback (mínima)
     CEPS_DATABASE = {
         "01000": {"cidade": "São Paulo", "uf": "SP", "tipo_tarifa": "CAPITAL 1", "prazo": 1, "seguro": 0.0066},
         "02000": {"cidade": "São Paulo", "uf": "SP", "tipo_tarifa": "CAPITAL 1", "prazo": 1, "seguro": 0.0066},
@@ -27,69 +27,65 @@ except ImportError:
 
 class FreteCalculator:
     def __init__(self):
-        try:
-            self.tabela = TabelaPrecos()
-            self.base_ceps = CEPS_DATABASE
-            self.cache_ceps = {}
-            print(f"📊 FreteCalculator inicializado com {len(self.base_ceps)} CEPs")
-        except Exception as e:
-            print(f"❌ Erro ao inicializar FreteCalculator: {str(e)}")
-            raise
+        self.tabela = TabelaPrecos()
+        self.base_ceps = CEPS_DATABASE
+        self.cache_ceps = {}
+        print(f"📊 FreteCalculator inicializado com {len(self.base_ceps)} CEPs")
 
     def buscar_cep(self, cep):
         """
         Busca informações de um CEP na base de dados
         """
-        try:
-            # Remove formatação
-            cep_limpo = re.sub(r"\D", "", cep)
+        # Remove formatação
+        cep_limpo = re.sub(r"\D", "", cep)
+        
+        if not cep_limpo:
+            return None
+        
+        # Verifica cache
+        if cep_limpo in self.cache_ceps:
+            return self.cache_ceps[cep_limpo]
+        
+        # Tenta com 5 dígitos (prefixo)
+        if len(cep_limpo) >= 5:
+            prefixo = cep_limpo[:5]
             
-            if not cep_limpo:
-                return None
+            # Busca exata pelo prefixo
+            if prefixo in self.base_ceps:
+                self.cache_ceps[cep_limpo] = self.base_ceps[prefixo]
+                print(f"✅ CEP {cep_limpo} encontrado: {self.base_ceps[prefixo]}")
+                return self.base_ceps[prefixo]
             
-            # Verifica cache
-            if cep_limpo in self.cache_ceps:
-                return self.cache_ceps[cep_limpo]
+            # Tenta com 4 dígitos
+            if len(prefixo) >= 4:
+                prefixo_4 = prefixo[:4]
+                for chave, valor in self.base_ceps.items():
+                    if chave.startswith(prefixo_4):
+                        self.cache_ceps[cep_limpo] = valor
+                        print(f"✅ CEP {cep_limpo} encontrado por prefixo 4: {valor}")
+                        return valor
             
-            # Tenta com 5 dígitos (prefixo)
-            if len(cep_limpo) >= 5:
-                prefixo = cep_limpo[:5]
-                
-                # Busca exata pelo prefixo
-                if prefixo in self.base_ceps:
-                    self.cache_ceps[cep_limpo] = self.base_ceps[prefixo]
-                    return self.base_ceps[prefixo]
-                
-                # Tenta com 4 dígitos
-                if len(prefixo) >= 4:
-                    prefixo_4 = prefixo[:4]
-                    for chave, valor in self.base_ceps.items():
-                        if chave.startswith(prefixo_4):
-                            self.cache_ceps[cep_limpo] = valor
-                            return valor
-                
-                # Tenta com 3 dígitos
-                if len(prefixo) >= 3:
-                    prefixo_3 = prefixo[:3] + "000"
-                    if prefixo_3 in self.base_ceps:
-                        self.cache_ceps[cep_limpo] = self.base_ceps[prefixo_3]
-                        return self.base_ceps[prefixo_3]
-                
-                # Tenta com 2 dígitos
-                if len(prefixo) >= 2:
-                    prefixo_2 = prefixo[:2] + "0000"
-                    if prefixo_2 in self.base_ceps:
-                        self.cache_ceps[cep_limpo] = self.base_ceps[prefixo_2]
-                        return self.base_ceps[prefixo_2]
+            # Tenta com 3 dígitos
+            if len(prefixo) >= 3:
+                prefixo_3 = prefixo[:3] + "000"
+                if prefixo_3 in self.base_ceps:
+                    self.cache_ceps[cep_limpo] = self.base_ceps[prefixo_3]
+                    print(f"✅ CEP {cep_limpo} encontrado por prefixo 3: {self.base_ceps[prefixo_3]}")
+                    return self.base_ceps[prefixo_3]
             
-            # Se não encontrou, classifica por primeiro dígito
-            resultado = self._classificar_por_primeiro_digito(cep_limpo)
-            self.cache_ceps[cep_limpo] = resultado
-            return resultado
-            
-        except Exception as e:
-            print(f"❌ Erro ao buscar CEP {cep}: {str(e)}")
-            return {"cidade": "São Paulo", "uf": "SP", "tipo_tarifa": "CAPITAL 1", "prazo": 1, "seguro": 0.0066}
+            # Tenta com 2 dígitos
+            if len(prefixo) >= 2:
+                prefixo_2 = prefixo[:2] + "0000"
+                if prefixo_2 in self.base_ceps:
+                    self.cache_ceps[cep_limpo] = self.base_ceps[prefixo_2]
+                    print(f"✅ CEP {cep_limpo} encontrado por prefixo 2: {self.base_ceps[prefixo_2]}")
+                    return self.base_ceps[prefixo_2]
+        
+        # Se não encontrou, classifica por primeiro dígito
+        resultado = self._classificar_por_primeiro_digito(cep_limpo)
+        self.cache_ceps[cep_limpo] = resultado
+        print(f"⚠️ CEP {cep_limpo} não encontrado. Usando fallback: {resultado}")
+        return resultado
     
     def _classificar_por_primeiro_digito(self, cep):
         """
@@ -121,21 +117,10 @@ class FreteCalculator:
         Calcula o subtotal (GLM + Comissão)
         O Advalorem será calculado no api.py
         """
-        try:
-            return self.tabela.calcular_frete(uf, tipo_tarifa, peso, modalidade)
-        except Exception as e:
-            print(f"❌ Erro ao calcular frete: {str(e)}")
-            return None
+        return self.tabela.calcular_frete(uf, tipo_tarifa, peso, modalidade)
     
     def calcular_frete_total(self, uf, tipo_tarifa, peso, modalidade="PACKAGE"):
         """
         Retorna apenas o subtotal (para compatibilidade)
         """
-        try:
-            resultado = self.calcular_frete(uf, tipo_tarifa, peso, modalidade)
-            if resultado:
-                return resultado['subtotal']
-            return None
-        except Exception as e:
-            print(f"❌ Erro ao calcular frete total: {str(e)}")
-            return None
+        return self.tabela.calcular_frete_total(uf, tipo_tarifa, peso, modalidade)
