@@ -44,9 +44,6 @@ class TabelaPrecos:
             "SC": 1.08, "SP": 5.80, "SE": 2.48, "TO": 2.67
         }
         
-        # ===== ADVALOREM =====
-        self.ADVALOREM_PERCENT = 0.0066  # 0,66%
-        
         # ===== MAPEAMENTO UF -> TIPO =====
         self.tipo_por_uf = {
             "AC": "INTERIOR 1", "AL": "INTERIOR 1", "AP": "INTERIOR 1", 
@@ -64,73 +61,47 @@ class TabelaPrecos:
         return self.tipo_por_uf.get(uf, "INTERIOR 1")
     
     def _interpolar_subtotal(self, uf, peso):
-        """
-        Interpola o Subtotal (GLM + Comissão) para um peso específico
-        """
-        if uf not in self.subtotais_capital:
-            print(f"⚠️ UF {uf} não encontrado na tabela de subtotais")
+        """Interpola o Subtotal (GLM + Comissão) para um peso específico"""
+        try:
+            if uf not in self.subtotais_capital:
+                return None
+            
+            tabela = self.subtotais_capital[uf]
+            pesos = sorted(tabela.keys())
+            
+            if peso <= pesos[0]:
+                return tabela[pesos[0]]
+            
+            if peso >= pesos[-1]:
+                kg_adicional = self.kg_adicional.get(uf, 5.00)
+                return round(tabela[pesos[-1]] + (peso - pesos[-1]) * kg_adicional, 2)
+            
+            for i in range(len(pesos) - 1):
+                if pesos[i] <= peso <= pesos[i + 1]:
+                    proporcao = (peso - pesos[i]) / (pesos[i + 1] - pesos[i])
+                    valor = tabela[pesos[i]] + (tabela[pesos[i + 1]] - tabela[pesos[i]]) * proporcao
+                    return round(valor, 2)
+            
             return None
-        
-        tabela = self.subtotais_capital[uf]
-        pesos_disponiveis = sorted(tabela.keys())
-        
-        # Se peso <= 1kg
-        if peso <= pesos_disponiveis[0]:
-            return tabela[pesos_disponiveis[0]]
-        
-        # Se peso >= 100kg
-        if peso >= pesos_disponiveis[-1]:
-            kg_adicional = self.kg_adicional.get(uf, 5.00)
-            valor_base = tabela[pesos_disponiveis[-1]]
-            return round(valor_base + (peso - pesos_disponiveis[-1]) * kg_adicional, 2)
-        
-        # Interpolação linear
-        for i in range(len(pesos_disponiveis) - 1):
-            if pesos_disponiveis[i] <= peso <= pesos_disponiveis[i + 1]:
-                peso_baixo = pesos_disponiveis[i]
-                peso_alto = pesos_disponiveis[i + 1]
-                valor_baixo = tabela[peso_baixo]
-                valor_alto = tabela[peso_alto]
-                
-                proporcao = (peso - peso_baixo) / (peso_alto - peso_baixo)
-                valor = valor_baixo + (valor_alto - valor_baixo) * proporcao
-                
-                return round(valor, 2)
-        
-        return None
+        except Exception as e:
+            return None
     
     def calcular_frete(self, uf, tipo_tarifa, peso, modalidade="PACKAGE"):
-        """
-        Calcula o frete: Subtotal + Advalorem
-        Fórmula: = Subtotal + (Subtotal * 0.0066)
-        """
-        print(f"🔍 Calculando frete: UF={uf}, Tipo={tipo_tarifa}, Peso={peso}, Modalidade={modalidade}")
-        
-        # 1. Busca o Subtotal (GLM + Comissão) interpolado
-        subtotal = self._interpolar_subtotal(uf, peso)
-        if subtotal is None:
-            print(f"❌ Subtotal não encontrado para UF={uf}, Peso={peso}")
+        """Calcula o subtotal (GLM + Comissão)"""
+        try:
+            subtotal = self._interpolar_subtotal(uf, peso)
+            if subtotal is None:
+                return None
+            return {'subtotal': round(subtotal, 2)}
+        except Exception as e:
             return None
-        
-        # 2. Advalorem (0,66% sobre o subtotal)
-        advalorem = round(subtotal * self.ADVALOREM_PERCENT, 2)
-        
-        # 3. Total = Subtotal + Advalorem
-        total = round(subtotal + advalorem, 2)
-        
-        print(f"✅ Subtotal={subtotal}, Advalorem={advalorem}, Total={total}")
-        
-        return {
-            'subtotal': round(subtotal, 2),
-            'advalorem': advalorem,
-            'total': total
-        }
     
     def calcular_frete_total(self, uf, tipo_tarifa, peso, modalidade="PACKAGE"):
-        """
-        Retorna apenas o total (para compatibilidade com o código antigo)
-        """
-        resultado = self.calcular_frete(uf, tipo_tarifa, peso, modalidade)
-        if resultado:
-            return resultado['total']
-        return None
+        """Retorna apenas o subtotal"""
+        try:
+            resultado = self.calcular_frete(uf, tipo_tarifa, peso, modalidade)
+            if resultado:
+                return resultado['subtotal']
+            return None
+        except Exception as e:
+            return None
