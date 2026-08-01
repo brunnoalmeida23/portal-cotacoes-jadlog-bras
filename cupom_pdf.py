@@ -205,21 +205,27 @@ class CupomPDF:
         self._texto_esquerda(c, "VALORES", y, self.TAMANHO_NORMAL, negrito=True)
         y -= 5 * 2.83465
         
-        # Frete Base
-        frete = dados_cotacao.get('frete', 0)
-        self._texto_colunas(c, "Frete Base:", self._formatar_moeda(frete), y, self.TAMANHO_NORMAL)
+        # Subtotal (Frete Base) - usa 'subtotal' do banco
+        subtotal = dados_cotacao.get('subtotal', 0)
+        if subtotal == 0:
+            # Fallback para compatibilidade
+            subtotal = dados_cotacao.get('frete', 0)
+        self._texto_colunas(c, "Frete Base:", self._formatar_moeda(subtotal), y, self.TAMANHO_NORMAL)
         y -= 4.5 * 2.83465
         
-        # Seguro
-        seguro = dados_cotacao.get('seguro', 0)
-        self._texto_colunas(c, "Seguro:", self._formatar_moeda(seguro), y, self.TAMANHO_NORMAL)
+        # Advalorem (Seguro) - usa 'advalorem' do banco
+        advalorem = dados_cotacao.get('advalorem', 0)
+        if advalorem == 0:
+            # Fallback para compatibilidade
+            advalorem = dados_cotacao.get('seguro', 0)
+        self._texto_colunas(c, "Advalorem (0,66%):", self._formatar_moeda(advalorem), y, self.TAMANHO_NORMAL)
         y -= 4.5 * 2.83465
         
-        # Valor NF
+        # Valor NF (para referência)
         valor_nf = dados_cotacao.get('valor_nf', 0)
         if valor_nf:
-            self._texto_colunas(c, "Valor NF:", self._formatar_moeda(valor_nf), y, self.TAMANHO_NORMAL)
-            y -= 4.5 * 2.83465
+            self._texto_colunas(c, "Valor NF:", self._formatar_moeda(valor_nf), y, self.TAMANHO_PEQUENO)
+            y -= 4 * 2.83465
         
         # Linha dupla antes do total
         self._linha_horizontal(c, y, "dupla")
@@ -227,6 +233,8 @@ class CupomPDF:
         
         # TOTAL - Destacado
         total = dados_cotacao.get('total', 0)
+        if total == 0:
+            total = subtotal + advalorem
         self._texto_colunas(c, "TOTAL:", self._formatar_moeda(total), y, self.TAMANHO_TITULO, negrito=True)
         y -= 6 * 2.83465
         
