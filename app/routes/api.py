@@ -122,9 +122,13 @@ async def calcular_frete_endpoint(
     
     subtotal = resultado['subtotal']
     
-    # ADVALOREM = 0,66% sobre o valor da NF
+    # ===== ADVALOREM (0,66% sobre o valor da NF) =====
+    # Exemplo: R$ 1.000,00 × 0,0066 = R$ 6,60
     advalorem = round(valor_nf * SEGURO_PERCENT, 2)
+    
+    # ===== TOTAL = Subtotal + Advalorem =====
     total = round(subtotal + advalorem, 2)
+    
     numero_cotacao = gerar_numero_cotacao()
     
     dados_cotacao = {
@@ -159,6 +163,7 @@ async def calcular_frete_endpoint(
             "tipo": tipo_tarifa,
             "prazo": f"{info_cep['prazo']} dias",
             "peso": peso,
+            "valor_nf": valor_nf,
             "subtotal": subtotal,
             "advalorem": advalorem,
             "valor_base": subtotal,
