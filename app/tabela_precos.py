@@ -1,8 +1,5 @@
-# ==================== TABELA DE PREÇOS ====================
 class TabelaPrecos:
     def __init__(self):
-        # ===== SUBTOTAIS (GLM + COMISSÃO) POR PESO =====
-        # Colunas E, G, I, K, M, O, Q, S, U, W, Y, AA da planilha "Preços CLIENTE SIMULADOR"
         self.subtotais_capital = {
             "AC": {1: 24.99, 5: 49.99, 10: 79.99, 20: 149.99, 30: 229.99, 40: 256.02, 50: 303.53, 60: 351.03, 70: 398.55, 80: 446.05, 90: 493.56, 100: 541.06},
             "AL": {1: 24.99, 5: 49.99, 10: 79.99, 20: 149.99, 30: 229.99, 40: 178.31, 50: 206.16, 60: 234.02, 70: 261.87, 80: 289.72, 90: 317.58, 100: 345.43},
@@ -33,7 +30,6 @@ class TabelaPrecos:
             "TO": {1: 24.99, 5: 49.99, 10: 79.99, 20: 149.99, 30: 229.99, 40: 185.57, 50: 215.56, 60: 245.55, 70: 275.54, 80: 305.52, 90: 335.51, 100: 365.49}
         }
         
-        # ===== KG ADICIONAL (para pesos > 30kg) =====
         self.kg_adicional = {
             "AC": 4.24, "AL": 2.48, "AP": 4.24, "AM": 4.24,
             "BA": 2.02, "CE": 3.99, "DF": 1.68, "ES": 1.68,
@@ -43,65 +39,31 @@ class TabelaPrecos:
             "RN": 4.24, "RS": 1.68, "RO": 4.24, "RR": 4.24,
             "SC": 1.08, "SP": 5.80, "SE": 2.48, "TO": 2.67
         }
-        
-        # ===== MAPEAMENTO UF -> TIPO =====
-        self.tipo_por_uf = {
-            "AC": "INTERIOR 1", "AL": "INTERIOR 1", "AP": "INTERIOR 1", 
-            "AM": "INTERIOR 1", "BA": "INTERIOR 1", "CE": "INTERIOR 1",
-            "DF": "INTERIOR 2", "ES": "INTERIOR 2", "GO": "INTERIOR 2",
-            "MA": "INTERIOR 1", "MT": "INTERIOR 1", "MS": "INTERIOR 1",
-            "MG": "INTERIOR 2", "PA": "INTERIOR 1", "PB": "INTERIOR 1",
-            "PR": "INTERIOR 2", "PE": "INTERIOR 1", "PI": "INTERIOR 1",
-            "RJ": "INTERIOR 2", "RN": "INTERIOR 1", "RS": "INTERIOR 2",
-            "RO": "INTERIOR 1", "RR": "INTERIOR 1", "SC": "INTERIOR 2",
-            "SP": "INTERIOR 2", "SE": "INTERIOR 1", "TO": "INTERIOR 1"
-        }
-    
-    def buscar_tipo_por_uf(self, uf):
-        return self.tipo_por_uf.get(uf, "INTERIOR 1")
-    
+
     def _interpolar_subtotal(self, uf, peso):
-        """Interpola o Subtotal (GLM + Comissão) para um peso específico"""
         try:
             if uf not in self.subtotais_capital:
                 return None
-            
             tabela = self.subtotais_capital[uf]
             pesos = sorted(tabela.keys())
-            
             if peso <= pesos[0]:
                 return tabela[pesos[0]]
-            
             if peso >= pesos[-1]:
                 kg_adicional = self.kg_adicional.get(uf, 5.00)
                 return round(tabela[pesos[-1]] + (peso - pesos[-1]) * kg_adicional, 2)
-            
             for i in range(len(pesos) - 1):
                 if pesos[i] <= peso <= pesos[i + 1]:
-                    proporcao = (peso - pesos[i]) / (pesos[i + 1] - pesos[i])
-                    valor = tabela[pesos[i]] + (tabela[pesos[i + 1]] - tabela[pesos[i]]) * proporcao
-                    return round(valor, 2)
-            
+                    prop = (peso - pesos[i]) / (pesos[i + 1] - pesos[i])
+                    return round(tabela[pesos[i]] + (tabela[pesos[i + 1]] - tabela[pesos[i]]) * prop, 2)
             return None
-        except Exception as e:
+        except:
             return None
-    
+
     def calcular_frete(self, uf, tipo_tarifa, peso, modalidade="PACKAGE"):
-        """Calcula o subtotal (GLM + Comissão)"""
         try:
             subtotal = self._interpolar_subtotal(uf, peso)
             if subtotal is None:
                 return None
             return {'subtotal': round(subtotal, 2)}
-        except Exception as e:
-            return None
-    
-    def calcular_frete_total(self, uf, tipo_tarifa, peso, modalidade="PACKAGE"):
-        """Retorna apenas o subtotal"""
-        try:
-            resultado = self.calcular_frete(uf, tipo_tarifa, peso, modalidade)
-            if resultado:
-                return resultado['subtotal']
-            return None
-        except Exception as e:
+        except:
             return None
